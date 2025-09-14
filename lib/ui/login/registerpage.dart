@@ -171,7 +171,7 @@ class _RegisterpageState extends State<Registerpage> {
                     titulo: 'Contraseña',
                     textoSobre: 'Ingrese su contraseña',
                   ),
-                  SizedBox(height: 15),
+                  SizedBox(height: 40),
                   Center(
                     child: Container(
                       width: double.infinity,
