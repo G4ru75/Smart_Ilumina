@@ -28,7 +28,6 @@ class TextoField extends StatelessWidget {
             letterSpacing: 1.2,
           ),
         ),
-        SizedBox(height: 4),
         TextField(
           controller: controlador,
           obscureText: contrasena,
@@ -91,6 +90,48 @@ class TextosPequenos extends StatelessWidget {
         fontWeight: FontWeight.normal,
         letterSpacing: 1,
       ),
+    );
+  }
+}
+
+class InputFecha extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final DateTime? initialDate;
+  final DateTime? firstDate;
+  final DateTime? lastDate;
+
+  const InputFecha({
+    Key? key,
+    required this.controller,
+    required this.label,
+    this.initialDate,
+    this.firstDate,
+    this.lastDate,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      readOnly: true,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: 'Selecciona tu fecha',
+        suffixIcon: Icon(Icons.calendar_today),
+      ),
+      onTap: () async {
+        DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: initialDate ?? DateTime.now(),
+          firstDate: firstDate ?? DateTime(1900),
+          lastDate: lastDate ?? DateTime.now(),
+        );
+        if (picked != null) {
+          controller.text =
+              "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+        }
+      },
     );
   }
 }
