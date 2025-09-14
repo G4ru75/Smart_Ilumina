@@ -7,7 +7,14 @@ class LoginPage extends StatefulWidget {
   final List<Usuario> usuarios;
   LoginPage({Key? key, List<Usuario>? usuarios})
     : usuarios = (usuarios == null || usuarios.isEmpty)
-          ? [Usuario(nombre: 'home', contrasena: '12345')]
+          ? [
+              Usuario(
+                nombre: 'home',
+                fechaNacimiento: DateTime(2000, 1, 1),
+                email: 'home@example.com',
+                contrasena: '12345',
+              ),
+            ]
           : usuarios!,
       super(key: key);
 
@@ -23,7 +30,7 @@ void Alerta(BuildContext context) {
         icon: Icon(Icons.error, color: Colors.red, size: 30),
         title: Text('Error'),
         content: Text(
-          'Usuario o contraseña incorrectos verifique el usuario o cree uno nuevo por favor',
+          'Email o contraseña incorrectos verifique el usuario o cree uno nuevo por favor',
         ),
         actions: [
           TextButton(
@@ -54,14 +61,7 @@ class _LoginPageState extends State<LoginPage> {
             Center(
               child: Column(
                 children: [
-                  Text(
-                    'Smart💡ilumina',
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 3,
-                    ),
-                  ),
+                  TextoSuperior(texto: 'Smart💡ilumina'),
                   SizedBox(height: 10),
                   Icon(
                     Icons.lightbulb_outline,
@@ -94,16 +94,7 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Text(
-                      'Login',
-                      style: TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 3,
-                      ),
-                    ),
-                  ),
+                  Center(child: TextoSuperior(texto: 'Login')),
                   SizedBox(height: 24),
 
                   SizedBox(height: 4),
@@ -162,15 +153,28 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 12),
+                  SizedBox(height: 15),
                   Center(
                     child: GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                Registerpage(usuarios: widget.usuarios),
+                          PageRouteBuilder(
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    Registerpage(usuarios: widget.usuarios),
+                            transitionsBuilder:
+                                (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
                           ),
                         );
                       },
