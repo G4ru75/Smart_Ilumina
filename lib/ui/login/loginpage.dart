@@ -46,7 +46,7 @@ void Alerta(BuildContext context) {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController txtUsuario = TextEditingController();
+  final TextEditingController txtEmail = TextEditingController();
   final TextEditingController txtContrasena = TextEditingController();
 
   @override
@@ -100,7 +100,7 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(height: 4),
                   TextoField(
                     contrasena: false,
-                    controlador: txtUsuario,
+                    controlador: txtEmail,
                     titulo: 'Email',
                     textoSobre: 'Ingrese su correo electrónico',
                   ),
@@ -129,7 +129,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         onPressed: () {
                           for (var usuario in widget.usuarios) {
-                            if (usuario.nombre == txtUsuario.text &&
+                            if (usuario.email == txtEmail.text &&
                                 usuario.contrasena == txtContrasena.text) {
                               Navigator.push(
                                 context,
