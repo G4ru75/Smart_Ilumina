@@ -124,7 +124,6 @@ class _RegisterpageState extends State<Registerpage> {
             // Tarjeta del login
             Container(
               width: double.infinity,
-              height: 590,
               decoration: BoxDecoration(
                 color: Color(0xFFA9AED4),
                 border: Border.all(color: Colors.blueAccent, width: 2),
@@ -171,7 +170,7 @@ class _RegisterpageState extends State<Registerpage> {
                     titulo: 'Contraseña',
                     textoSobre: 'Ingrese su contraseña',
                   ),
-                  SizedBox(height: 50),
+                  SizedBox(height: 40),
                   Center(
                     child: Container(
                       width: double.infinity,
@@ -179,7 +178,7 @@ class _RegisterpageState extends State<Registerpage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueAccent,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 18),
+                          padding: EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -199,6 +198,10 @@ class _RegisterpageState extends State<Registerpage> {
                                 contrasena: txtContrasena.text,
                               ),
                             );
+                            txtNombre.clear();
+                            txtFechaNacimiento.clear();
+                            txtEmail.clear();
+                            txtContrasena.clear();
                             alertaRegistroExitoso();
                           } else {
                             alertaRegistroFallido(resultado);
