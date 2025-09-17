@@ -178,7 +178,7 @@ class _RegisterpageState extends State<Registerpage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueAccent,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 18),
+                          padding: EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -198,6 +198,10 @@ class _RegisterpageState extends State<Registerpage> {
                                 contrasena: txtContrasena.text,
                               ),
                             );
+                            txtNombre.clear();
+                            txtFechaNacimiento.clear();
+                            txtEmail.clear();
+                            txtContrasena.clear();
                             alertaRegistroExitoso();
                           } else {
                             alertaRegistroFallido(resultado);

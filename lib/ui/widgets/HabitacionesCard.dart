@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'textos.dart'; // Asegúrate de importar tu widget de texto aquí
 
 class HabitacionesCard extends StatefulWidget {
   const HabitacionesCard({Key? key}) : super(key: key);
@@ -46,18 +47,92 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
     },
   ];
 
-  void agregarHabitacion() {
+  void agregarHabitacion(TextEditingController txtNombreHabitacion) {
     setState(() {
       habitaciones.add({
-        'nombre': 'Nueva',
+        'nombre': txtNombreHabitacion.text.trim(),
         'icon': Icons.home,
         'valor': '0/1',
         'progreso': 0.0,
         'color': Colors.purple,
       });
-
-      setState(() {});
     });
+  }
+
+  void mostrarAgregarHabitacionModal() {
+    final TextEditingController txtNombreHabitacion = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: Colors.black, width: 2),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.arrow_back),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          'Agregar Habitación',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 48), // Para balancear el espacio del back
+                  ],
+                ),
+                SizedBox(height: 16),
+                SizedBox(height: 16),
+                // Usa tu widget de texto personalizado aquí
+                TextoField(
+                  titulo: 'Digite el nombre',
+                  controlador: txtNombreHabitacion,
+                  textoSobre: 'Cuarto de los niños',
+                ),
+                SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      if (txtNombreHabitacion.text.trim().isNotEmpty) {
+                        agregarHabitacion(txtNombreHabitacion);
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: Text(
+                      'Agregar habitación',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -140,7 +215,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: agregarHabitacion,
+                  onPressed: mostrarAgregarHabitacionModal,
                   child: Text(
                     'Agregar habitación',
                     style: TextStyle(
