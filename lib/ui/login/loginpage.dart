@@ -7,7 +7,14 @@ class LoginPage extends StatefulWidget {
   final List<Usuario> usuarios;
   LoginPage({Key? key, List<Usuario>? usuarios})
     : usuarios = (usuarios == null || usuarios.isEmpty)
-          ? [Usuario(nombre: 'home', contrasena: '12345')]
+          ? [
+              Usuario(
+                nombre: 'home',
+                fechaNacimiento: DateTime(2000, 1, 1),
+                email: 'home@example.com',
+                contrasena: '12345',
+              ),
+            ]
           : usuarios!,
       super(key: key);
 
@@ -15,32 +22,79 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-void Alerta(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        icon: Icon(Icons.error, color: Colors.red, size: 30),
-        title: Text('Error'),
-        content: Text(
-          'Usuario o contraseña incorrectos verifique el usuario o cree uno nuevo por favor',
-        ),
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController txtEmail = TextEditingController();
+  final TextEditingController txtContrasena = TextEditingController();
+
+  String Validacion() {
+    if (!txtEmail.text.contains('@') || !txtEmail.text.contains('.')) {
+      return 'El correo electrónico no es válido';
+    }
+    if (txtContrasena.text.length < 5 ||
+        txtContrasena.text.length > 20 ||
+        txtContrasena.text.isEmpty) {
+      return 'La contraseña debe tener entre 5 y 20 caracteres';
+    }
+
+    for (var usuario in widget.usuarios) {
+      if (usuario.email == txtEmail.text &&
+          usuario.contrasena == txtContrasena.text) {
+        return 'OK';
+      }
+    }
+    return 'Ha ocurrido un error';
+  }
+
+  void errorRegistro(BuildContext context, String mensaje) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          icon: Icon(Icons.error, color: Colors.red, size: 30),
+          title: Text('Error de autenticación'),
+          content: Text(mensaje),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Aceptar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void alertaRegistroExitoso() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Inicio Exitoso'),
+        content: Text('Bienvenido al sistema.'),
+        icon: Icon(Icons.check_circle, color: Colors.green, size: 30),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      HomePage(),
+                  transitionsBuilder:
+                      (context, animation, secondaryAnimation, child) {
+                        return FadeTransition(opacity: animation, child: child);
+                      },
+                ),
+              ); // Solo cerrar el diálogo
             },
-            child: Text('Aceptar'),
+            child: Text('OK'),
           ),
         ],
-      );
-    },
-  );
-}
-
-class _LoginPageState extends State<LoginPage> {
-  final TextEditingController txtUsuario = TextEditingController();
-  final TextEditingController txtContrasena = TextEditingController();
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,14 +108,7 @@ class _LoginPageState extends State<LoginPage> {
             Center(
               child: Column(
                 children: [
-                  Text(
-                    'Smart💡ilumina',
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 3,
-                    ),
-                  ),
+                  TextoSuperior(texto: 'Smart💡ilumina'),
                   SizedBox(height: 10),
                   Icon(
                     Icons.lightbulb_outline,
@@ -94,22 +141,13 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Text(
-                      'Login',
-                      style: TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 3,
-                      ),
-                    ),
-                  ),
+                  Center(child: TextoSuperior(texto: 'Login')),
                   SizedBox(height: 24),
 
                   SizedBox(height: 4),
                   TextoField(
                     contrasena: false,
-                    controlador: txtUsuario,
+                    controlador: txtEmail,
                     titulo: 'Email',
                     textoSobre: 'Ingrese su correo electrónico',
                   ),
@@ -129,7 +167,7 @@ class _LoginPageState extends State<LoginPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueAccent,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 18),
+                          padding: EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -137,19 +175,14 @@ class _LoginPageState extends State<LoginPage> {
                           shadowColor: Colors.blueAccent,
                         ),
                         onPressed: () {
-                          for (var usuario in widget.usuarios) {
-                            if (usuario.nombre == txtUsuario.text &&
-                                usuario.contrasena == txtContrasena.text) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const HomePage(),
-                                ),
-                              );
-                              return;
-                            }
+                          String validacion = Validacion();
+                          if (validacion != 'OK') {
+                            errorRegistro(context, validacion);
+                          } else {
+                            alertaRegistroExitoso();
+                            txtContrasena.clear();
+                            txtEmail.clear();
                           }
-                          Alerta(context);
                         },
                         child: Text(
                           'Login',
@@ -162,15 +195,28 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 12),
+                  SizedBox(height: 15),
                   Center(
                     child: GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                Registerpage(usuarios: widget.usuarios),
+                          PageRouteBuilder(
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    Registerpage(usuarios: widget.usuarios),
+                            transitionsBuilder:
+                                (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
                           ),
                         );
                       },
