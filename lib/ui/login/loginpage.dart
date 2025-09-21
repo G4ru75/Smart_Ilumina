@@ -27,9 +27,22 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController txtContrasena = TextEditingController();
 
   String Validacion() {
+    if (txtEmail.text.isEmpty) {
+      return 'El correo electrónico no puede estar vacío';
+    }
+
+    if (txtContrasena.text.isEmpty) {
+      return 'La contraseña no puede estar vacío';
+    }
+
+    if (txtEmail.text.isEmpty && txtContrasena.text.isEmpty) {
+      return 'Debe de llenar todos los campos';
+    }
+
     if (!txtEmail.text.contains('@') || !txtEmail.text.contains('.')) {
       return 'El correo electrónico no es válido';
     }
+
     if (txtContrasena.text.length < 5 ||
         txtContrasena.text.length > 20 ||
         txtContrasena.text.isEmpty) {
