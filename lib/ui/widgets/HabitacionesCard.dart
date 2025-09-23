@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'textos.dart'; // Asegúrate de importar tu widget de texto aquí
+import 'textos.dart';
+import 'LucesHabitacionModal.dart';
 
 class HabitacionesCard extends StatefulWidget {
   const HabitacionesCard({Key? key}) : super(key: key);
@@ -13,49 +14,85 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
     {
       'nombre': 'Sala',
       'icon': Icons.weekend,
-      'valor': '4/5',
-      'progreso': 0.9,
       'color': Colors.blue,
+      'luces': [
+        {'nombre': 'Luz 1', 'encendida': true},
+        {'nombre': 'Luz 2', 'encendida': true},
+        {'nombre': 'Luz 3', 'encendida': true},
+        {'nombre': 'Luz 4', 'encendida': false},
+      ],
     },
     {
       'nombre': 'Dormitorio',
       'icon': Icons.bed,
-      'valor': '4/5',
-      'progreso': 0.9,
       'color': Colors.blue,
+      'luces': [
+        {'nombre': 'Luz 1', 'encendida': false},
+        {'nombre': 'Luz 2', 'encendida': true},
+        {'nombre': 'Luz 3', 'encendida': false},
+      ],
     },
     {
       'nombre': 'Baño',
       'icon': Icons.bathtub,
-      'valor': '0/5',
-      'progreso': 0.0,
       'color': Colors.blue,
+      'luces': [
+        {'nombre': 'Luz 1', 'encendida': false},
+      ],
     },
     {
       'nombre': 'Terraza',
       'icon': Icons.deck,
-      'valor': '4/5',
-      'progreso': 0.9,
       'color': Colors.green,
+      'luces': [
+        {'nombre': 'Luz 1', 'encendida': true},
+        {'nombre': 'Luz 2', 'encendida': true},
+      ],
     },
     {
       'nombre': 'Cocina',
       'icon': Icons.calendar_today,
-      'valor': '0/5',
-      'progreso': 0.0,
       'color': Colors.black54,
+      'luces': [
+        {'nombre': 'Luz 1', 'encendida': false},
+        {'nombre': 'Luz 2', 'encendida': false},
+        {'nombre': 'Luz 3', 'encendida': false},
+        {'nombre': 'Luz 4', 'encendida': false},
+      ],
     },
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // Inicializa 'valor' y 'progreso' según las luces de cada habitación
+    for (final hab in habitaciones) {
+      _actualizarProgresoHabitacion(hab);
+    }
+  }
+
+  void _actualizarProgresoHabitacion(Map<String, dynamic> habitacion) {
+    final List luces = (habitacion['luces'] as List? ?? []);
+    final int total = luces.length;
+    final int encendidas = luces
+        .where((l) => (l['encendida'] ?? false) == true)
+        .length;
+    habitacion['valor'] = total == 0 ? '0/0' : '$encendidas/$total';
+    habitacion['progreso'] = total == 0 ? 0.0 : encendidas / total;
+  }
+
   void agregarHabitacion(TextEditingController txtNombreHabitacion) {
     setState(() {
-      habitaciones.add({
+      final nueva = {
         'nombre': txtNombreHabitacion.text.trim(),
         'icon': Icons.home,
-        'valor': '0/1',
-        'progreso': 0.0,
         'color': Colors.purple,
-      });
+        'luces': [
+          {'nombre': 'Luz 1', 'encendida': false},
+        ],
+      };
+      _actualizarProgresoHabitacion(nueva);
+      habitaciones.add(nueva);
     });
   }
 
@@ -135,6 +172,31 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
     );
   }
 
+  void _mostrarLucesHabitacionModal(Map<String, dynamic> habitacion) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: Colors.black, width: 2),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: LucesHabitacionModal(
+              habitacion: habitacion,
+              onChanged: () {
+                setState(() {
+                  _actualizarProgresoHabitacion(habitacion);
+                });
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -163,42 +225,48 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
             ...habitaciones.map(
               (hab) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    Icon(
-                      hab['icon'] as IconData,
-                      color: hab['color'] as Color,
-                      size: 28,
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            hab['nombre'] as String,
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            hab['valor'] as String,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          LinearProgressIndicator(
-                            value: hab['progreso'] as double,
-                            minHeight: 7,
-                            backgroundColor: Colors.grey[300],
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              hab['color'] as Color,
-                            ),
-                          ),
-                        ],
+                child: GestureDetector(
+                  onTap: () => _mostrarLucesHabitacionModal(hab),
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    children: [
+                      Icon(
+                        hab['icon'] as IconData,
+                        color: hab['color'] as Color,
+                        size: 28,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              hab['nombre'] as String,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              (hab['valor'] ?? '') as String,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            LinearProgressIndicator(
+                              value: (hab['progreso'] ?? 0.0) as double,
+                              minHeight: 7,
+                              backgroundColor: Colors.grey[300],
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                hab['color'] as Color,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
