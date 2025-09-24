@@ -16,10 +16,6 @@ class Navbar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         child: Row(
           children: [
-            IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: Icon(Icons.arrow_back, size: 28, color: Colors.black),
-            ),
             Icon(Icons.lightbulb, color: Colors.yellow[700], size: 32),
             SizedBox(width: 8),
             Column(
