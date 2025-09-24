@@ -1,28 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:smart_ilumina/controllers/usuarios_controller.dart';
 import 'package:smart_ilumina/ui/widgets/textos.dart';
 import 'package:smart_ilumina/ui/home/homepage.dart';
 import 'package:smart_ilumina/ui/login/registerpage.dart';
 
 class LoginPage extends StatefulWidget {
-  final List<Usuario> usuarios;
-  LoginPage({Key? key, List<Usuario>? usuarios})
-    : usuarios = (usuarios == null || usuarios.isEmpty)
-          ? [
-              Usuario(
-                nombre: 'home',
-                fechaNacimiento: DateTime(2000, 1, 1),
-                email: 'home@example.com',
-                contrasena: '12345',
-              ),
-            ]
-          : usuarios!,
-      super(key: key);
+  LoginPage({Key? key}) : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final UsuariosController usuariosController = Get.find();
   final TextEditingController txtEmail = TextEditingController();
   final TextEditingController txtContrasena = TextEditingController();
 
@@ -49,12 +40,15 @@ class _LoginPageState extends State<LoginPage> {
       return 'La contraseña debe tener entre 5 y 20 caracteres';
     }
 
-    for (var usuario in widget.usuarios) {
-      if (usuario.email == txtEmail.text &&
-          usuario.contrasena == txtContrasena.text) {
-        return 'OK';
-      }
+    if (usuariosController.verificarUsuario(
+      txtEmail.text,
+      txtContrasena.text,
+    )) {
+      return 'OK';
+    } else {
+      return 'Usuario o contraseña incorrecta';
     }
+
     return 'Ha ocurrido un error';
   }
 
@@ -218,7 +212,7 @@ class _LoginPageState extends State<LoginPage> {
                           PageRouteBuilder(
                             pageBuilder:
                                 (context, animation, secondaryAnimation) =>
-                                    Registerpage(usuarios: widget.usuarios),
+                                    Registerpage(),
                             transitionsBuilder:
                                 (
                                   context,

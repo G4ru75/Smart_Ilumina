@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:smart_ilumina/controllers/usuarios_controller.dart';
 import 'package:smart_ilumina/ui/widgets/textos.dart';
 import 'package:smart_ilumina/ui/login/loginpage.dart';
 
 class Registerpage extends StatefulWidget {
-  final List<Usuario>? usuarios;
-  Registerpage({Key? key, required this.usuarios}) : super(key: key);
+  Registerpage({Key? key}) : super(key: key);
 
   @override
   State<Registerpage> createState() => _RegisterpageState();
 }
 
 class _RegisterpageState extends State<Registerpage> {
+  final UsuariosController usuariosControler = Get.find();
   final TextEditingController txtNombre = TextEditingController();
   final TextEditingController txtFechaNacimiento = TextEditingController();
   final TextEditingController txtEmail = TextEditingController();
@@ -42,7 +44,7 @@ class _RegisterpageState extends State<Registerpage> {
       return 'La contraseña debe tener entre 5 y 20 caracteres';
     }
 
-    for (var usuario in widget.usuarios!) {
+    for (var usuario in usuariosControler.usuariosList) {
       if (usuario.email == txtEmail.text) {
         return 'El usuario ya existe, por favor elija otro nombre';
       }
@@ -64,7 +66,7 @@ class _RegisterpageState extends State<Registerpage> {
                 context,
                 PageRouteBuilder(
                   pageBuilder: (context, animation, secondaryAnimation) =>
-                      LoginPage(usuarios: widget.usuarios),
+                      LoginPage(),
                   transitionsBuilder:
                       (context, animation, secondaryAnimation, child) {
                         return FadeTransition(opacity: animation, child: child);
@@ -102,6 +104,7 @@ class _RegisterpageState extends State<Registerpage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
           children: [
@@ -188,15 +191,14 @@ class _RegisterpageState extends State<Registerpage> {
                         onPressed: () {
                           String resultado = Validacion();
                           if (resultado == 'OK') {
-                            widget.usuarios!.add(
-                              Usuario(
-                                nombre: txtNombre.text,
-                                fechaNacimiento: DateTime.parse(
-                                  txtFechaNacimiento.text,
-                                ),
-                                email: txtEmail.text,
-                                contrasena: txtContrasena.text,
-                              ),
+                            DateTime fechaNacimiento = DateTime.parse(
+                              txtFechaNacimiento.text,
+                            );
+                            usuariosControler.agregarUsuario(
+                              txtNombre.text.trim(),
+                              fechaNacimiento,
+                              txtEmail.text.trim(),
+                              txtContrasena.text.trim(),
                             );
                             txtNombre.clear();
                             txtFechaNacimiento.clear();
@@ -227,7 +229,7 @@ class _RegisterpageState extends State<Registerpage> {
                           PageRouteBuilder(
                             pageBuilder:
                                 (context, animation, secondaryAnimation) =>
-                                    LoginPage(usuarios: widget.usuarios),
+                                    LoginPage(),
                             transitionsBuilder:
                                 (
                                   context,
@@ -254,18 +256,4 @@ class _RegisterpageState extends State<Registerpage> {
       ),
     );
   }
-}
-
-class Usuario {
-  String nombre;
-  DateTime fechaNacimiento;
-  String email;
-  String contrasena;
-
-  Usuario({
-    required this.nombre,
-    required this.fechaNacimiento,
-    required this.email,
-    required this.contrasena,
-  });
 }
