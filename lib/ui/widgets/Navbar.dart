@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_ilumina/ui/scaner/scanerpage.dart';
 import 'textos.dart';
 
 class Navbar extends StatelessWidget {
@@ -15,10 +16,6 @@ class Navbar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         child: Row(
           children: [
-            IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: Icon(Icons.arrow_back, size: 28, color: Colors.black),
-            ),
             Icon(Icons.lightbulb, color: Colors.yellow[700], size: 32),
             SizedBox(width: 8),
             Column(
@@ -32,7 +29,18 @@ class Navbar extends StatelessWidget {
               ],
             ),
             Spacer(),
-            Icon(Icons.qr_code, size: 28, color: Colors.black54),
+            IconButton(
+              onPressed: () async {
+                final resultado = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ScanerPage()),
+                );
+                if (resultado != null) {
+                  print('Codigo Qr escaneado: $resultado');
+                }
+              },
+              icon: Icon(Icons.qr_code, size: 28, color: Colors.black54),
+            ),
           ],
         ),
       ),
