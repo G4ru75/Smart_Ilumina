@@ -1,23 +1,38 @@
-
-
+import 'package:get/get.dart';
 import 'package:smart_ilumina/models/usuarios_models.dart';
 
-class usuarios_controller extends GextController {
-  var UsuariosList = <Usuario>[]; 
+class UsuariosController extends GetxController {
+  var usuariosList = <Usuario>[
+    Usuario(
+      nombre: 'Home',
+      fechaNacimiento: DateTime(2000, 1, 1),
+      email: 'home@example.com',
+      contrasena: '12345',
+    ),
+  ];
 
-  void agregarUsuario(String nombre, DateTime fechaNacimiento, String email, String contrasena,)
-  {
-    UsuariosList.add(Usuario(nombre: nombre, fechaNacimiento: fechaNacimiento, email: email, contrasena: contrasena))
+  void agregarUsuario(
+    String nombre,
+    DateTime fechaNacimiento,
+    String email,
+    String contrasena,
+  ) {
+    usuariosList.add(
+      Usuario(
+        nombre: nombre,
+        fechaNacimiento: fechaNacimiento,
+        email: email,
+        contrasena: contrasena,
+      ),
+    );
   }
 
-  bool verificarUsuario(String email, String contrasena){
-    for(usuario in UsuariosList){
-      if(usuario.email == email && usuario.contrasena == contrasena){
+  bool verificarUsuario(String email, String contrasena) {
+    for (var usuario in usuariosList) {
+      if (usuario.email == email && usuario.contrasena == contrasena) {
         return true;
       }
     }
-    return false; 
+    return false;
   }
-
-
 }
