@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
 import 'textos.dart';
 import 'LucesHabitacionModal.dart';
 
@@ -10,89 +12,11 @@ class HabitacionesCard extends StatefulWidget {
 }
 
 class _HabitacionesCardState extends State<HabitacionesCard> {
-  List<Map<String, dynamic>> habitaciones = [
-    {
-      'nombre': 'Sala',
-      'icon': Icons.weekend,
-      'color': Colors.blue,
-      'luces': [
-        {'nombre': 'Luz 1', 'encendida': true},
-        {'nombre': 'Luz 2', 'encendida': true},
-        {'nombre': 'Luz 3', 'encendida': true},
-        {'nombre': 'Luz 4', 'encendida': false},
-      ],
-    },
-    {
-      'nombre': 'Dormitorio',
-      'icon': Icons.bed,
-      'color': Colors.blue,
-      'luces': [
-        {'nombre': 'Luz 1', 'encendida': false},
-        {'nombre': 'Luz 2', 'encendida': true},
-        {'nombre': 'Luz 3', 'encendida': false},
-      ],
-    },
-    {
-      'nombre': 'Baño',
-      'icon': Icons.bathtub,
-      'color': Colors.blue,
-      'luces': [
-        {'nombre': 'Luz 1', 'encendida': false},
-      ],
-    },
-    {
-      'nombre': 'Terraza',
-      'icon': Icons.deck,
-      'color': Colors.green,
-      'luces': [
-        {'nombre': 'Luz 1', 'encendida': true},
-        {'nombre': 'Luz 2', 'encendida': true},
-      ],
-    },
-    {
-      'nombre': 'Cocina',
-      'icon': Icons.calendar_today,
-      'color': Colors.black54,
-      'luces': [
-        {'nombre': 'Luz 1', 'encendida': false},
-        {'nombre': 'Luz 2', 'encendida': false},
-        {'nombre': 'Luz 3', 'encendida': false},
-        {'nombre': 'Luz 4', 'encendida': false},
-      ],
-    },
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    // Inicializa 'valor' y 'progreso' según las luces de cada habitación
-    for (final hab in habitaciones) {
-      _actualizarProgresoHabitacion(hab);
-    }
-  }
-
-  void _actualizarProgresoHabitacion(Map<String, dynamic> habitacion) {
-    final List luces = (habitacion['luces'] as List? ?? []);
-    final int total = luces.length;
-    final int encendidas = luces
-        .where((l) => (l['encendida'] ?? false) == true)
-        .length;
-    habitacion['valor'] = total == 0 ? '0/0' : '$encendidas/$total';
-    habitacion['progreso'] = total == 0 ? 0.0 : encendidas / total;
-  }
+  final HabitacionesController habitacionesController = Get.find();
 
   void agregarHabitacion(TextEditingController txtNombreHabitacion) {
     setState(() {
-      final nueva = {
-        'nombre': txtNombreHabitacion.text.trim(),
-        'icon': Icons.home,
-        'color': Colors.purple,
-        'luces': [
-          {'nombre': 'Luz 1', 'encendida': false},
-        ],
-      };
-      _actualizarProgresoHabitacion(nueva);
-      habitaciones.add(nueva);
+      habitacionesController.agregarHabitacion(txtNombreHabitacion.text.trim());
     });
   }
 
@@ -171,36 +95,12 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
     );
   }
 
-  void _mostrarLucesHabitacionModal(Map<String, dynamic> habitacion) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: const BorderSide(color: Colors.black, width: 2),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: LucesHabitacionModal(
-              habitacion: habitacion,
-              onChanged: () {
-                setState(() {
-                  _actualizarProgresoHabitacion(habitacion);
-                });
-              },
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
+        height: MediaQuery.of(context).size.height * 0.5,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -221,51 +121,82 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
             ),
             SizedBox(height: 12),
-            ...habitaciones.map(
-              (hab) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: GestureDetector(
-                  onTap: () => _mostrarLucesHabitacionModal(hab),
-                  behavior: HitTestBehavior.opaque,
-                  child: Row(
-                    children: [
-                      Icon(
-                        hab['icon'] as IconData,
-                        color: hab['color'] as Color,
-                        size: 28,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              hab['nombre'] as String,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
+            // Lista de habitaciones usando Expanded y ListView.builder
+            Container(
+              height: 280,
+              child: Obx(
+                () => ListView.builder(
+                  itemCount: habitacionesController.habitacionesList.length,
+                  itemBuilder: (context, index) {
+                    final habitacion =
+                        habitacionesController.habitacionesList[index];
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: GestureDetector(
+                        onTap: () {
+                          // Abrir modal de luces de la habitación
+                          showDialog(
+                            context: context,
+                            builder: (context) =>
+                                LucesHabitacionModal(habitacionIndex: index),
+                          );
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                habitacion.icon,
+                                color: habitacion.color,
+                                size: 28,
                               ),
-                            ),
-                            Text(
-                              (hab['valor'] ?? '') as String,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[700],
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      habitacion.nombre,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      habitacion.valor ?? '0/0',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    LinearProgressIndicator(
+                                      value: habitacion.progreso ?? 0.0,
+                                      minHeight: 7,
+                                      backgroundColor: Colors.grey[300],
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        habitacion.color,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            LinearProgressIndicator(
-                              value: (hab['progreso'] ?? 0.0) as double,
-                              minHeight: 7,
-                              backgroundColor: Colors.grey[300],
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                hab['color'] as Color,
+                              Icon(
+                                Icons.chevron_right,
+                                color: Colors.grey[400],
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -282,7 +213,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: mostrarAgregarHabitacionModal,
+                  onPressed: () => mostrarAgregarHabitacionModal(),
                   child: Text(
                     'Agregar habitación',
                     style: TextStyle(

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-class ArcIntensitySlider extends StatefulWidget {
+class ArcoIntensidad extends StatefulWidget {
   final double value; // 0..1
   final Color color;
   final ValueChanged<double> onChanged;
 
-  const ArcIntensitySlider({
+  const ArcoIntensidad({
     super.key,
     required this.value,
     required this.color,
@@ -14,10 +14,10 @@ class ArcIntensitySlider extends StatefulWidget {
   });
 
   @override
-  State<ArcIntensitySlider> createState() => _ArcIntensitySliderState();
+  State<ArcoIntensidad> createState() => _ArcoIntensidadState();
 }
 
-class _ArcIntensitySliderState extends State<ArcIntensitySlider> {
+class _ArcoIntensidadState extends State<ArcoIntensidad> {
   late double _value;
 
   @override
