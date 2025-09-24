@@ -22,7 +22,6 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
 
   void mostrarAgregarHabitacionModal() {
     final TextEditingController txtNombreHabitacion = TextEditingController();
-
     showDialog(
       context: context,
       builder: (context) {
