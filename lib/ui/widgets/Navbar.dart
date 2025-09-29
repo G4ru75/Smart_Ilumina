@@ -13,10 +13,10 @@ class Navbar extends StatelessWidget {
         color: Colors.white,
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         child: Row(
           children: [
-            Icon(Icons.lightbulb, color: Colors.yellow[700], size: 32),
+            Icon(Icons.lightbulb, color: Colors.yellow[700], size: 30),
             SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
