@@ -83,18 +83,7 @@ class _LoginPageState extends State<LoginPage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) =>
-                      HomePage(),
-                  transitionsBuilder:
-                      (context, animation, secondaryAnimation, child) {
-                        return FadeTransition(opacity: animation, child: child);
-                      },
-                ),
-              ); // Solo cerrar el diálogo
+              Get.offAllNamed('/home');
             },
             child: Text('OK'),
           ),
@@ -111,16 +100,15 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: Column(
           children: [
-            SizedBox(height: 130),
-            // Encabezado con texto y bombilla
+            SizedBox(height: MediaQuery.of(context).size.height * 0.1),
             Center(
               child: Column(
                 children: [
                   TextoSuperior(texto: 'Smart💡ilumina'),
-                  SizedBox(height: 10),
+                  SizedBox(height: 1),
                   Icon(
                     Icons.lightbulb_outline,
-                    size: 204,
+                    size: 200,
                     color: Colors.blueAccent,
                   ),
                 ],
@@ -145,29 +133,26 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ],
               ),
-              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 42),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(child: TextoSuperior(texto: 'Login')),
                   SizedBox(height: 24),
-
-                  SizedBox(height: 4),
                   TextoField(
                     contrasena: false,
                     controlador: txtEmail,
                     titulo: 'Email',
                     textoSobre: 'Ingrese su correo electrónico',
                   ),
-                  SizedBox(height: 18),
-                  SizedBox(height: 4),
+                  SizedBox(height: 10),
                   TextoField(
                     contrasena: true,
                     controlador: txtContrasena,
                     titulo: 'Contraseña',
                     textoSobre: 'Ingrese su contraseña',
                   ),
-                  SizedBox(height: 32),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.06),
                   Center(
                     child: Container(
                       width: double.infinity,
