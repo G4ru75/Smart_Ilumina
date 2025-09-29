@@ -28,8 +28,8 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
   late Color colorActual;
 
   final List<Color> presets = const [
-    Color(0xFF1976D2),
-    Color(0xFFFFC107),
+    Colors.blue,
+    Colors.yellow,
     Colors.white,
     Colors.red,
     Colors.green,
