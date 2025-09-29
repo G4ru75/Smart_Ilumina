@@ -52,12 +52,11 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                         ),
                       ),
                     ),
-                    SizedBox(width: 48), // Para balancear el espacio del back
+                    SizedBox(width: 48),
                   ],
                 ),
                 SizedBox(height: 16),
                 SizedBox(height: 16),
-                // Usa tu widget de texto personalizado aquí
                 TextoField(
                   titulo: 'Digite el nombre',
                   controlador: txtNombreHabitacion,
@@ -120,10 +119,10 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
               'Habitaciones',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
             ),
-            SizedBox(height: 12),
-            // Lista de habitaciones usando Expanded y ListView.builder
+            SizedBox(height: 1),
+            // Lista de habitaciones
             Container(
-              height: 280,
+              height: MediaQuery.of(context).size.height * 0.35,
               child: Obx(
                 () => ListView.builder(
                   itemCount: habitacionesController.habitacionesList.length,
@@ -132,7 +131,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                         habitacionesController.habitacionesList[index];
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      padding: const EdgeInsets.symmetric(vertical: 5),
                       child: GestureDetector(
                         onTap: () {
                           // Abrir modal de luces de la habitación
@@ -200,7 +199,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                 ),
               ),
             ),
-            SizedBox(height: 18),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.02),
             Center(
               child: SizedBox(
                 width: double.infinity,
