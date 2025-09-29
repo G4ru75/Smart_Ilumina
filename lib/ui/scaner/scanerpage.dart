@@ -21,7 +21,7 @@ class _ScanerPageState extends State<ScanerPage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Cerrar diálogo
+              Navigator.pop(context);
               Navigator.pop(context, code); // Volver con el resultado
             },
             child: Text('OK'),
@@ -30,7 +30,7 @@ class _ScanerPageState extends State<ScanerPage> {
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                Escaneado = false; // Permitir escanear de nuevo
+                Escaneado = false;
               });
               cameraController.start(); // Reiniciar la cámara
             },

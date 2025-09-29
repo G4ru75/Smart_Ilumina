@@ -57,9 +57,9 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             children: [
               Navbar(),
-              SizedBox(height: 20),
+              SizedBox(height: 15),
               _buildInfoCards(),
-              SizedBox(height: 50),
+              SizedBox(height: 20),
               HabitacionesCard(),
             ],
           ),
