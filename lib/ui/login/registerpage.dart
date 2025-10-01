@@ -38,17 +38,12 @@ class _RegisterpageState extends State<Registerpage> {
     if (!txtEmail.text.contains('@') || !txtEmail.text.contains('.')) {
       return 'El correo electrónico no es válido';
     }
-    if (txtContrasena.text.length < 5 ||
+    if (txtContrasena.text.length < 6 ||
         txtContrasena.text.length > 20 ||
         txtContrasena.text.isEmpty) {
-      return 'La contraseña debe tener entre 5 y 20 caracteres';
+      return 'La contraseña debe tener entre 6 y 20 caracteres';
     }
 
-    for (var usuario in usuariosControler.usuariosList) {
-      if (usuario.email == txtEmail.text) {
-        return 'El usuario ya existe, por favor elija otro nombre';
-      }
-    }
     return 'OK';
   }
 
@@ -193,7 +188,7 @@ class _RegisterpageState extends State<Registerpage> {
                             DateTime fechaNacimiento = DateTime.parse(
                               txtFechaNacimiento.text,
                             );
-                            usuariosControler.agregarUsuario(
+                            usuariosControler.registrarUsuario(
                               txtNombre.text.trim(),
                               fechaNacimiento,
                               txtEmail.text.trim(),
