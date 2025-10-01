@@ -40,16 +40,7 @@ class _LoginPageState extends State<LoginPage> {
       return 'La contraseña debe tener entre 5 y 20 caracteres';
     }
 
-    if (usuariosController.verificarUsuario(
-      txtEmail.text,
-      txtContrasena.text,
-    )) {
-      return 'OK';
-    } else {
-      return 'Usuario o contraseña incorrecta';
-    }
-
-    return 'Ha ocurrido un error';
+    return 'OK';
   }
 
   void errorRegistro(BuildContext context, String mensaje) {
@@ -96,6 +87,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
           children: [
@@ -166,14 +158,26 @@ class _LoginPageState extends State<LoginPage> {
                           elevation: 8,
                           shadowColor: Colors.blueAccent,
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           String validacion = Validacion();
                           if (validacion != 'OK') {
                             errorRegistro(context, validacion);
-                          } else {
-                            alertaRegistroExitoso();
+                            return;
+                          }
+                          final ok = await usuariosController.loginUsuario(
+                            txtEmail.text.trim(),
+                            txtContrasena.text.trim(),
+                          );
+
+                          if (ok) {
+                            Get.offAllNamed('/home');
                             txtContrasena.clear();
                             txtEmail.clear();
+                          } else {
+                            errorRegistro(
+                              context,
+                              'Usuario o contraseña incorrecta',
+                            );
                           }
                         },
                         child: Text(
