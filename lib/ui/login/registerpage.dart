@@ -38,17 +38,12 @@ class _RegisterpageState extends State<Registerpage> {
     if (!txtEmail.text.contains('@') || !txtEmail.text.contains('.')) {
       return 'El correo electrónico no es válido';
     }
-    if (txtContrasena.text.length < 5 ||
+    if (txtContrasena.text.length < 6 ||
         txtContrasena.text.length > 20 ||
         txtContrasena.text.isEmpty) {
-      return 'La contraseña debe tener entre 5 y 20 caracteres';
+      return 'La contraseña debe tener entre 6 y 20 caracteres';
     }
 
-    for (var usuario in usuariosControler.usuariosList) {
-      if (usuario.email == txtEmail.text) {
-        return 'El usuario ya existe, por favor elija otro nombre';
-      }
-    }
     return 'OK';
   }
 
@@ -108,16 +103,15 @@ class _RegisterpageState extends State<Registerpage> {
       body: SafeArea(
         child: Column(
           children: [
-            SizedBox(height: 50),
-            // Encabezado con texto y bombilla
+            SizedBox(height: MediaQuery.of(context).size.height * 0.05),
             Center(
               child: Column(
                 children: [
                   TextoSuperior(texto: 'Smart💡ilumina'),
-                  SizedBox(height: 10),
+                  SizedBox(height: 1),
                   Icon(
                     Icons.lightbulb_outline,
-                    size: 204,
+                    size: 200,
                     color: Colors.blueAccent,
                   ),
                 ],
@@ -142,12 +136,12 @@ class _RegisterpageState extends State<Registerpage> {
                   ),
                 ],
               ),
-              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 42),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(child: TextoSuperior(texto: 'Sign Up')),
-                  SizedBox(height: 10),
+                  SizedBox(height: 24),
                   TextoField(
                     contrasena: false,
                     controlador: txtNombre,
@@ -173,7 +167,7 @@ class _RegisterpageState extends State<Registerpage> {
                     titulo: 'Contraseña',
                     textoSobre: 'Ingrese su contraseña',
                   ),
-                  SizedBox(height: 40),
+                  SizedBox(height: 23),
                   Center(
                     child: Container(
                       width: double.infinity,
@@ -181,7 +175,7 @@ class _RegisterpageState extends State<Registerpage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueAccent,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 15),
+                          padding: EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -194,7 +188,7 @@ class _RegisterpageState extends State<Registerpage> {
                             DateTime fechaNacimiento = DateTime.parse(
                               txtFechaNacimiento.text,
                             );
-                            usuariosControler.agregarUsuario(
+                            usuariosControler.registrarUsuario(
                               txtNombre.text.trim(),
                               fechaNacimiento,
                               txtEmail.text.trim(),
@@ -220,7 +214,7 @@ class _RegisterpageState extends State<Registerpage> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 15),
+                  SizedBox(height: 5),
                   Center(
                     child: GestureDetector(
                       onTap: () {

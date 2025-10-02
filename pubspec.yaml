@@ -36,6 +36,10 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   get: ^4.7.2
+  firebase_core: ^2.27.1
+  firebase_auth: ^4.17.9
+  cloud_firestore: ^4.15.9 
+  get_storage: ^2.1.1
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +51,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -89,3 +94,14 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Configuración del generador de íconos de la app (Android/iOS)
+flutter_launcher_icons:
+  android: true
+  ios: true
+  # Coloca tu ícono base en esta ruta (PNG cuadrado, recomendado 1024x1024)
+  image_path: lib\assets\app_icon.png
+  # Para Android 8+ (ícono adaptativo). Opcional si no defines foreground/background separados
+  # adaptive_icon_background: "#FFFFFF"  # o una imagen: assets/app_icon_bg.png
+  # adaptive_icon_foreground: assets/app_icon_fg.png
+  min_sdk_android: 21
