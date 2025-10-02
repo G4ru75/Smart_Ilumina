@@ -17,10 +17,10 @@ class UsuariosController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    autoLogin();
+    _autoLogin();
   }
 
-  void autoLogin() {
+  void _autoLogin() {
     String? email = storage.read('email');
     String? contrasena = storage.read('contrasena');
     if (email != null && contrasena != null) {
@@ -37,7 +37,7 @@ class UsuariosController extends GetxController {
       );
       storage.write('email', email);
       storage.write('contrasena', contrasena);
-      return true;
+
       Get.snackbar(
         'Exito',
         'Inicio de sesión exitoso',
@@ -46,8 +46,8 @@ class UsuariosController extends GetxController {
       );
 
       isLoading.value = false;
+      return true;
     } on FirebaseAuthException catch (e) {
-      return false;
       isLoading.value = false;
       Get.snackbar(
         'Error',
@@ -55,6 +55,7 @@ class UsuariosController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+      return false;
     }
   }
 
