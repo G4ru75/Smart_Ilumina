@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "784758592335",
+    "project_id": "smart-ilumina",
+    "storage_bucket": "smart-ilumina.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:784758592335:android:3f6397213f9cca59d12b3a",
+        "android_client_info": {
+          "package_name": "com.example.smart_ilumina"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTcEs1kqWSypQ6BOkjS4npK8g1WOHtcNA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
