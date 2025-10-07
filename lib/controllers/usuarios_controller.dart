@@ -4,39 +4,63 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:smart_ilumina/models/usuarios_models.dart';
-
-import '../models/usuarios_models.dart';
+import 'package:smart_ilumina/controllers/habitaciones_controller.dart'; // <-- importar
 
 class UsuariosController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final storage = GetStorage();
+
+  // NO hagas Get.find() aquí
+  late final HabitacionesController _habitacionesController;
+
   final Rxn<Usuario> usuario = Rxn<Usuario>();
   var isLoading = false.obs;
 
   @override
   void onInit() {
     super.onInit();
+
+    // Resolver el controlador ya registrado
+    if (Get.isRegistered<HabitacionesController>()) {
+      _habitacionesController = Get.find<HabitacionesController>();
+    } else {
+      // Evita crashear si aún no está registrado
+      ever(isLoading, (_) {}); // no-op para mantener el ciclo
+    }
+
     _autoLogin();
   }
 
   void _autoLogin() {
-    String? email = storage.read('email');
-    String? contrasena = storage.read('contrasena');
-    if (email != null && contrasena != null) {
-      loginUsuario(email, contrasena);
+    try {
+      final email = storage.read<String>('email');
+      final contrasena = storage.read<String>('contrasena');
+      if (email != null && contrasena != null) {
+        loginUsuario(email, contrasena);
+      }
+    } catch (_) {
+      // ignora si GetStorage no está listo
     }
   }
 
   Future<bool> loginUsuario(String email, String contrasena) async {
     try {
       isLoading.value = true;
+
       await _auth.signInWithEmailAndPassword(
         email: email,
         password: contrasena,
       );
-      storage.write('email', email);
-      storage.write('contrasena', contrasena);
+
+      await storage.write('email', email);
+      await storage.write('contrasena', contrasena);
+
+      // Cargar habitaciones (si el controlador existe)
+      if (Get.isRegistered<HabitacionesController>()) {
+        _habitacionesController = Get.find<HabitacionesController>();
+        await _habitacionesController.cargarHabitacionesUsuario();
+      }
 
       Get.snackbar(
         'Exito',
@@ -44,11 +68,8 @@ class UsuariosController extends GetxController {
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
-
-      isLoading.value = false;
       return true;
     } on FirebaseAuthException catch (e) {
-      isLoading.value = false;
       Get.snackbar(
         'Error',
         e.message ?? 'Error desconocido',
@@ -56,6 +77,17 @@ class UsuariosController extends GetxController {
         colorText: Colors.white,
       );
       return false;
+    } catch (e, s) {
+      debugPrint('Login post-auth error: $e\n$s');
+      Get.snackbar(
+        'Error',
+        'Ocurrió un problema al continuar',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -67,10 +99,12 @@ class UsuariosController extends GetxController {
   ) async {
     try {
       isLoading.value = true;
-      UserCredential userCredential = await _auth
-          .createUserWithEmailAndPassword(email: email, password: contrasena);
+      final cred = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: contrasena,
+      );
 
-      Usuario nuevoUsuario = Usuario(
+      final nuevoUsuario = Usuario(
         nombre: nombre,
         fechaNacimiento: fechaNacimiento,
         email: email,
@@ -78,8 +112,14 @@ class UsuariosController extends GetxController {
 
       await _firestore
           .collection('usuarios')
-          .doc(userCredential.user?.uid)
+          .doc(cred.user!.uid)
           .set(nuevoUsuario.toMap());
+
+      // Opcional: precargar habitaciones (vacío)
+      if (Get.isRegistered<HabitacionesController>()) {
+        _habitacionesController = Get.find<HabitacionesController>();
+        await _habitacionesController.cargarHabitacionesUsuario();
+      }
 
       Get.snackbar(
         'Éxito',
@@ -87,7 +127,6 @@ class UsuariosController extends GetxController {
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
-      isLoading.value = false;
     } on FirebaseAuthException catch (e) {
       Get.snackbar(
         'Error',
@@ -95,13 +134,8 @@ class UsuariosController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Error al registrar usuario',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+    } finally {
+      isLoading.value = false;
     }
   }
 }

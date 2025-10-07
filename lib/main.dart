@@ -11,7 +11,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   Get.put(UsuariosController());
-  await GetStorage.init();
   Get.put(HabitacionesController());
+  await GetStorage.init();
+
   runApp(const MyApp());
 }

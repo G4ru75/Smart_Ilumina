@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/usuarios_controller.dart';
 import 'package:smart_ilumina/ui/widgets/textos.dart';
-import 'package:smart_ilumina/ui/home/homepage.dart';
 import 'package:smart_ilumina/ui/login/registerpage.dart';
 
 class LoginPage extends StatefulWidget {
