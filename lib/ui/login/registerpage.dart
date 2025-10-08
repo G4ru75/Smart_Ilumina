@@ -97,155 +97,181 @@ class _RegisterpageState extends State<Registerpage> {
 
   @override
   Widget build(BuildContext context) {
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Column(
-          children: [
-            SizedBox(height: MediaQuery.of(context).size.height * 0.05),
-            Center(
-              child: Column(
-                children: [
-                  TextoSuperior(texto: 'Smart💡ilumina'),
-                  SizedBox(height: 1),
-                  Icon(
-                    Icons.lightbulb_outline,
-                    size: 200,
-                    color: Colors.blueAccent,
-                  ),
-                ],
-              ),
-            ),
-            Spacer(),
-            // Tarjeta del login
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Color(0xFFA9AED4),
-                border: Border.all(color: Colors.blueAccent, width: 2),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(100),
-                  topRight: Radius.circular(100),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 16,
-                    offset: Offset(0, -8),
-                  ),
-                ],
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 42),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(child: TextoSuperior(texto: 'Sign Up')),
-                  SizedBox(height: 24),
-                  TextoField(
-                    contrasena: false,
-                    controlador: txtNombre,
-                    titulo: 'Nombre',
-                    textoSobre: 'Ingrese su nombre',
-                  ),
-                  SizedBox(height: 10),
-                  InputFecha(
-                    controller: txtFechaNacimiento,
-                    label: 'Fecha de Nacimiento',
-                  ),
-                  SizedBox(height: 10),
-                  TextoField(
-                    contrasena: false,
-                    controlador: txtEmail,
-                    titulo: 'Email',
-                    textoSobre: 'Ingrese su correo electrónico',
-                  ),
-                  SizedBox(height: 10),
-                  TextoField(
-                    contrasena: true,
-                    controlador: txtContrasena,
-                    titulo: 'Contraseña',
-                    textoSobre: 'Ingrese su contraseña',
-                  ),
-                  SizedBox(height: 23),
-                  Center(
-                    child: Container(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 8,
-                          shadowColor: Colors.blueAccent,
-                        ),
-                        onPressed: () {
-                          String resultado = Validacion();
-                          if (resultado == 'OK') {
-                            DateTime fechaNacimiento = DateTime.parse(
-                              txtFechaNacimiento.text,
-                            );
-                            usuariosControler.registrarUsuario(
-                              txtNombre.text.trim(),
-                              fechaNacimiento,
-                              txtEmail.text.trim(),
-                              txtContrasena.text.trim(),
-                            );
-                            txtNombre.clear();
-                            txtFechaNacimiento.clear();
-                            txtEmail.clear();
-                            txtContrasena.clear();
-                            alertaRegistroExitoso();
-                          } else {
-                            alertaRegistroFallido(resultado);
-                          }
-                        },
-                        child: Text(
-                          'Sign Up',
-                          style: TextStyle(
-                            fontSize: 20,
-                            letterSpacing: 2,
-                            fontWeight: FontWeight.bold,
-                          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: viewInsets),
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.05,
+                      ),
+                      Center(
+                        child: Column(
+                          children: [
+                            TextoSuperior(texto: 'Smart💡ilumina'),
+                            const SizedBox(height: 1),
+                            const Icon(
+                              Icons.lightbulb_outline,
+                              size: 200,
+                              color: Colors.blueAccent,
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 5),
-                  Center(
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder:
-                                (context, animation, secondaryAnimation) =>
-                                    LoginPage(),
-                            transitionsBuilder:
-                                (
-                                  context,
-                                  animation,
-                                  secondaryAnimation,
-                                  child,
-                                ) {
-                                  return FadeTransition(
-                                    opacity: animation,
-                                    child: child,
+                      const Spacer(),
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFA9AED4),
+                          border: Border.all(
+                            color: Colors.blueAccent,
+                            width: 2,
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(100),
+                            topRight: Radius.circular(100),
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 16,
+                              offset: Offset(0, -8),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 42,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(child: TextoSuperior(texto: 'Sign Up')),
+                            const SizedBox(height: 24),
+                            TextoField(
+                              contrasena: false,
+                              controlador: txtNombre,
+                              titulo: 'Nombre',
+                              textoSobre: 'Ingrese su nombre',
+                            ),
+                            const SizedBox(height: 10),
+                            InputFecha(
+                              controller: txtFechaNacimiento,
+                              label: 'Fecha de Nacimiento',
+                            ),
+                            const SizedBox(height: 10),
+                            TextoField(
+                              contrasena: false,
+                              controlador: txtEmail,
+                              titulo: 'Email',
+                              textoSobre: 'Ingrese su correo electrónico',
+                            ),
+                            const SizedBox(height: 10),
+                            TextoField(
+                              contrasena: true,
+                              controlador: txtContrasena,
+                              titulo: 'Contraseña',
+                              textoSobre: 'Ingrese su contraseña',
+                            ),
+                            const SizedBox(height: 23),
+                            Center(
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blueAccent,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 8,
+                                    shadowColor: Colors.blueAccent,
+                                  ),
+                                  onPressed: () {
+                                    String resultado = Validacion();
+                                    if (resultado == 'OK') {
+                                      DateTime fechaNacimiento = DateTime.parse(
+                                        txtFechaNacimiento.text,
+                                      );
+                                      usuariosControler.registrarUsuario(
+                                        txtNombre.text.trim(),
+                                        fechaNacimiento,
+                                        txtEmail.text.trim(),
+                                        txtContrasena.text.trim(),
+                                      );
+                                      txtNombre.clear();
+                                      txtFechaNacimiento.clear();
+                                      txtEmail.clear();
+                                      txtContrasena.clear();
+                                      alertaRegistroExitoso();
+                                    } else {
+                                      alertaRegistroFallido(resultado);
+                                    }
+                                  },
+                                  child: const Text(
+                                    'Sign Up',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      letterSpacing: 2,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Center(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    PageRouteBuilder(
+                                      pageBuilder:
+                                          (
+                                            context,
+                                            animation,
+                                            secondaryAnimation,
+                                          ) => LoginPage(),
+                                      transitionsBuilder:
+                                          (
+                                            context,
+                                            animation,
+                                            secondaryAnimation,
+                                            child,
+                                          ) {
+                                            return FadeTransition(
+                                              opacity: animation,
+                                              child: child,
+                                            );
+                                          },
+                                    ),
                                   );
                                 },
-                          ),
-                        );
-                      },
-                      child: TextosPequenos(texto: 'Iniciar sesion'),
-                    ),
+                                child: TextosPequenos(texto: 'Iniciar sesion'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
