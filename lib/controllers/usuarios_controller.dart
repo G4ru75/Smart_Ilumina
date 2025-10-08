@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:smart_ilumina/models/usuarios_models.dart';
+
 import 'package:smart_ilumina/controllers/habitaciones_controller.dart'; // <-- importar
 
 class UsuariosController extends GetxController {
@@ -33,6 +34,14 @@ class UsuariosController extends GetxController {
   }
 
   void _autoLogin() {
+    final String? email = storage.read('email');
+    final String? contrasena = storage.read('contrasena');
+    if (email != null &&
+        contrasena != null &&
+        email.isNotEmpty &&
+        contrasena.isNotEmpty) {
+      // No mostrar feedback visual en auto login silencioso
+      loginUsuario(email, contrasena, showFeedback: false);
     try {
       final email = storage.read<String>('email');
       final contrasena = storage.read<String>('contrasena');
@@ -44,7 +53,11 @@ class UsuariosController extends GetxController {
     }
   }
 
-  Future<bool> loginUsuario(String email, String contrasena) async {
+  Future<bool> loginUsuario(
+    String email,
+    String contrasena, {
+    bool showFeedback = true,
+  }) async {
     try {
       isLoading.value = true;
 
@@ -52,6 +65,29 @@ class UsuariosController extends GetxController {
         email: email,
         password: contrasena,
       );
+      storage.write('email', email);
+      storage.write('contrasena', contrasena);
+      if (showFeedback) {
+        Get.snackbar(
+          'Éxito',
+          'Inicio de sesión exitoso',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      }
+
+      isLoading.value = false;
+      return true;
+    } on FirebaseAuthException catch (e) {
+      isLoading.value = false;
+      if (showFeedback) {
+        Get.snackbar(
+          'Error',
+          e.message ?? 'Error desconocido',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
 
       await storage.write('email', email);
       await storage.write('contrasena', contrasena);

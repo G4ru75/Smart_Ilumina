@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:get/get.dart';
+import 'package:smart_ilumina/utils/light_scan_parser.dart';
+import 'package:smart_ilumina/ui/widgets/VincularLuzModal.dart';
 
 class ScanerPage extends StatefulWidget {
   const ScanerPage({Key? key}) : super(key: key);
@@ -10,47 +13,41 @@ class ScanerPage extends StatefulWidget {
 
 class _ScanerPageState extends State<ScanerPage> {
   MobileScannerController cameraController = MobileScannerController();
-  bool Escaneado = false;
+  bool _procesando = false;
 
-  void Escaneo(String code) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('QR Escaneado'),
-        content: Text('Código: $code'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context, code); // Volver con el resultado
-            },
-            child: Text('OK'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                Escaneado = false;
-              });
-              cameraController.start(); // Reiniciar la cámara
-            },
-            child: Text('Escanear otro'),
-          ),
-        ],
-      ),
-    );
+  void _onCode(String code) {
+    final parsed = LightScanParser.parse(code);
+    if (!parsed.recognized) {
+      Get.snackbar(
+        'QR no reconocido',
+        'El código escaneado no pertenece a una luz válida',
+      );
+      _resetScan();
+      return;
+    }
+    Get.dialog(VincularLuzModal(data: parsed), barrierDismissible: false).then((
+      _,
+    ) {
+      // Al cerrar el modal (confirmado o cancelado) salimos de la pantalla para volver al flujo anterior
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
+  void _resetScan() {
+    setState(() => _procesando = false);
+    cameraController.start();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Escanea el codigo qr'),
+        title: const Text('Escanea el código QR'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.flash_on),
+            icon: const Icon(Icons.flash_on),
             onPressed: () => cameraController.toggleTorch(),
           ),
         ],
@@ -58,15 +55,13 @@ class _ScanerPageState extends State<ScanerPage> {
       body: MobileScanner(
         controller: cameraController,
         onDetect: (capture) {
-          if (!Escaneado && capture.barcodes.isNotEmpty) {
-            setState(() {
-              Escaneado = true;
-            });
-            final String code = capture.barcodes.first.rawValue ?? '';
-            cameraController
-                .stop(); // Pausar la cámara mientras se muestra el diálogo
-            Escaneo(code);
-          }
+          if (_procesando) return;
+          if (capture.barcodes.isEmpty) return;
+          final code = capture.barcodes.first.rawValue ?? '';
+          if (code.isEmpty) return;
+          setState(() => _procesando = true);
+          cameraController.stop();
+          _onCode(code);
         },
       ),
     );

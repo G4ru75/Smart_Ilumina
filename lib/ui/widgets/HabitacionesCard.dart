@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
-import 'textos.dart';
 import 'LucesHabitacionModal.dart';
+import 'textos.dart';
 
 class HabitacionesCard extends StatefulWidget {
   const HabitacionesCard({Key? key}) : super(key: key);
@@ -14,81 +14,109 @@ class HabitacionesCard extends StatefulWidget {
 class _HabitacionesCardState extends State<HabitacionesCard> {
   final HabitacionesController habitacionesController = Get.find();
 
-  void agregarHabitacion(TextEditingController txtNombreHabitacion) {
+  void _agregarHabitacion(String nombre) {
     setState(() {
-      habitacionesController.agregarHabitacion(txtNombreHabitacion.text.trim());
+      habitacionesController.agregarHabitacion(nombre.trim());
     });
   }
 
-  void mostrarAgregarHabitacionModal() {
-    final TextEditingController txtNombreHabitacion = TextEditingController();
+  void _mostrarAgregarHabitacionModal() {
+    final txt = TextEditingController();
     showDialog(
       context: context,
       builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: Colors.black, width: 2),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.arrow_back),
-                      onPressed: () => Navigator.pop(context),
+        final media = MediaQuery.of(context);
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                behavior: HitTestBehavior.opaque,
+              ),
+            ),
+            AnimatedPadding(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 24 + media.padding.top,
+                bottom: 16 + media.viewInsets.bottom,
+              ),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Dialog(
+                    insetPadding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      side: const BorderSide(color: Colors.black, width: 2),
                     ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          'Agregar Habitación',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                              const Expanded(
+                                child: Center(
+                                  child: Text(
+                                    'Agregar Habitación',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 48),
+                            ],
                           ),
-                        ),
+                          const SizedBox(height: 16),
+                          TextoField(
+                            titulo: 'Digite el nombre',
+                            controlador: txt,
+                            textoSobre: 'Cuarto de los niños',
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              final nombre = txt.text.trim();
+                              if (nombre.isNotEmpty) {
+                                _agregarHabitacion(nombre);
+                                Navigator.pop(context);
+                              }
+                            },
+                            child: const Text(
+                              'Agregar habitación',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    SizedBox(width: 48),
-                  ],
-                ),
-                SizedBox(height: 16),
-                SizedBox(height: 16),
-                TextoField(
-                  titulo: 'Digite el nombre',
-                  controlador: txtNombreHabitacion,
-                  textoSobre: 'Cuarto de los niños',
-                ),
-                SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (txtNombreHabitacion.text.trim().isNotEmpty) {
-                        agregarHabitacion(txtNombreHabitacion);
-                        Navigator.pop(context);
-                      }
-                    },
-                    child: Text(
-                      'Agregar habitación',
-                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         );
       },
     );
@@ -99,11 +127,10 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.5,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black12,
               blurRadius: 12,
@@ -111,30 +138,36 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
             ),
           ],
         ),
-        padding: EdgeInsets.all(18),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Habitaciones',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
             ),
-            SizedBox(height: 1),
-            // Lista de habitaciones
-            Container(
-              height: MediaQuery.of(context).size.height * 0.35,
-              child: Obx(
-                () => ListView.builder(
-                  itemCount: habitacionesController.habitacionesList.length,
+            const SizedBox(height: 8),
+            Expanded(
+              child: Obx(() {
+                final list = habitacionesController.habitacionesList;
+                if (list.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No hay habitaciones aún',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: EdgeInsets.zero,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: list.length,
                   itemBuilder: (context, index) {
-                    final habitacion =
-                        habitacionesController.habitacionesList[index];
-
+                    final habitacion = list[index];
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 5),
                       child: GestureDetector(
                         onTap: () {
-                          // Abrir modal de luces de la habitación
                           showDialog(
                             context: context,
                             builder: (context) =>
@@ -142,7 +175,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                           );
                         },
                         child: Container(
-                          padding: EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: Colors.grey[50],
                             borderRadius: BorderRadius.circular(12),
@@ -155,14 +188,14 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                                 color: habitacion.color,
                                 size: 28,
                               ),
-                              SizedBox(width: 12),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       habitacion.nombre,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontWeight: FontWeight.w500,
                                         fontSize: 16,
                                       ),
@@ -174,7 +207,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                                         color: Colors.grey[700],
                                       ),
                                     ),
-                                    SizedBox(height: 4),
+                                    const SizedBox(height: 4),
                                     LinearProgressIndicator(
                                       value: habitacion.progreso ?? 0.0,
                                       minHeight: 7,
@@ -196,30 +229,28 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                       ),
                     );
                   },
-                ),
-              ),
+                );
+              }),
             ),
-            SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-            Center(
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  onPressed: () => mostrarAgregarHabitacionModal(),
-                  child: Text(
-                    'Agregar habitación',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
+                ),
+                onPressed: _mostrarAgregarHabitacionModal,
+                child: const Text(
+                  'Agregar habitación',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
                   ),
                 ),
               ),
