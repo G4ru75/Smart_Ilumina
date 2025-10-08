@@ -211,33 +211,11 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 15),
+                            SizedBox(height: 15),
                             Center(
                               child: GestureDetector(
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    PageRouteBuilder(
-                                      pageBuilder:
-                                          (
-                                            context,
-                                            animation,
-                                            secondaryAnimation,
-                                          ) => Registerpage(),
-                                      transitionsBuilder:
-                                          (
-                                            context,
-                                            animation,
-                                            secondaryAnimation,
-                                            child,
-                                          ) {
-                                            return FadeTransition(
-                                              opacity: animation,
-                                              child: child,
-                                            );
-                                          },
-                                    ),
-                                  );
+                                  Get.toNamed('/signup');
                                 },
                                 child: TextosPequenos(texto: 'Registrarse'),
                               ),
@@ -247,20 +225,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ],
                   ),
-<<<<<<< HEAD
-                  SizedBox(height: 15),
-                  Center(
-                    child: GestureDetector(
-                      onTap: () {
-                        Get.toNamed('/signup');
-                      },
-                      child: TextosPequenos(texto: 'Registrarse'),
-                    ),
-                  ),
-                ],
-=======
                 ),
->>>>>>> 83b7f4167176cf30ba7fc56dbcd7ef4ae23a7672
               ),
             );
           },

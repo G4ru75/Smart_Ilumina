@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
+import 'package:smart_ilumina/ui/widgets/textos.dart';
 import 'ArcoIntensidad.dart';
 
 class ConfigLuzModal extends StatefulWidget {
@@ -26,6 +27,8 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
   late bool encendida;
   late double intensidad; // 0.0 - 1.0
   late Color colorActual;
+  TimeOfDay? horaEncendido;
+  TimeOfDay? horaApagado;
 
   final List<Color> presets = const [
     Colors.blue,
@@ -45,6 +48,8 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
     encendida = luz.encendida;
     intensidad = luz.intensidad;
     colorActual = luz.color;
+    horaEncendido = luz.horaEncendido;
+    horaApagado = luz.horaApagado;
   }
 
   void _guardar() {
@@ -54,6 +59,8 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
       encendida: encendida,
       intensidad: intensidad,
       color: colorActual,
+      horaEncendido: horaEncendido,
+      horaApagado: horaApagado,
     );
     widget.onSaved?.call();
     Navigator.of(context).pop();
@@ -102,7 +109,14 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                 (c) => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
                   child: GestureDetector(
-                    onTap: () => setState(() => colorActual = c),
+                    onTap: () {
+                      setState(() => colorActual = c);
+                      habitacionesController.cambiarColorLuz(
+                        widget.habitacionIndex,
+                        widget.luzIndex,
+                        c,
+                      );
+                    },
                     child: Container(
                       width: 18,
                       height: 18,
@@ -125,7 +139,14 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                 value: encendida,
                 activeThumbColor: Colors.white,
                 activeTrackColor: hab.color,
-                onChanged: (v) => setState(() => encendida = v),
+                onChanged: (v) {
+                  setState(() => encendida = v);
+                  habitacionesController.cambiarEstadoLuz(
+                    widget.habitacionIndex,
+                    widget.luzIndex,
+                    v,
+                  );
+                },
               ),
             ],
           ),
@@ -163,7 +184,49 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                 child: ArcoIntensidad(
                   color: colorActual,
                   value: intensidad,
-                  onChanged: (v) => setState(() => intensidad = v),
+                  onChanged: (v) {
+                    setState(() => intensidad = v);
+                    habitacionesController.cambiarIntensidadLuzDebounced(
+                      widget.habitacionIndex,
+                      widget.luzIndex,
+                      v,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: HoraInputField(
+                  titulo: 'Hora de Encendido',
+                  value: horaEncendido,
+                  onChanged: (v) {
+                    setState(() => horaEncendido = v);
+                    habitacionesController.cambiarHorasLuz(
+                      widget.habitacionIndex,
+                      widget.luzIndex,
+                      horaEncendido: v,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: HoraInputField(
+                  titulo: 'Hora de Apagado',
+                  value: horaApagado,
+                  onChanged: (v) {
+                    setState(() => horaApagado = v);
+                    habitacionesController.cambiarHorasLuz(
+                      widget.habitacionIndex,
+                      widget.luzIndex,
+                      horaApagado: v,
+                    );
+                  },
                 ),
               ),
             ],
@@ -181,7 +244,10 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              onPressed: _guardar,
+              onPressed: () {
+                widget.onSaved?.call();
+                Navigator.of(context).pop();
+              },
               child: const Text('Guardar'),
             ),
           ),
