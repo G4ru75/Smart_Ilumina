@@ -52,20 +52,6 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
     horaApagado = luz.horaApagado;
   }
 
-  void _guardar() {
-    habitacionesController.configurarLuz(
-      widget.habitacionIndex,
-      widget.luzIndex,
-      encendida: encendida,
-      intensidad: intensidad,
-      color: colorActual,
-      horaEncendido: horaEncendido,
-      horaApagado: horaApagado,
-    );
-    widget.onSaved?.call();
-    Navigator.of(context).pop();
-  }
-
   @override
   Widget build(BuildContext context) {
     final hab = habitacionesController.habitacionesList[widget.habitacionIndex];
@@ -135,19 +121,26 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                 ),
               ),
               const Spacer(),
-              Switch(
-                value: encendida,
-                activeThumbColor: Colors.white,
-                activeTrackColor: hab.color,
-                onChanged: (v) {
-                  setState(() => encendida = v);
-                  habitacionesController.cambiarEstadoLuz(
-                    widget.habitacionIndex,
-                    widget.luzIndex,
-                    v,
-                  );
-                },
-              ),
+              // Switch reactivo: se mueve solo cuando el controlador cambia el estado
+              Obx(() {
+                final value = habitacionesController
+                    .habitacionesList[widget.habitacionIndex]
+                    .luces[widget.luzIndex]
+                    .encendida;
+
+                return Switch(
+                  value: value,
+                  activeThumbColor: Colors.white,
+                  activeTrackColor: hab.color,
+                  onChanged: (v) {
+                    habitacionesController.cambiarEstadoLuz(
+                      widget.habitacionIndex,
+                      widget.luzIndex,
+                      v,
+                    );
+                  },
+                );
+              }),
             ],
           ),
 

@@ -13,7 +13,7 @@ class HabitacionesController extends GetxController {
 
   // Debounce por luz para evitar muchas escrituras al arrastrar intensidad
   final Map<String, Timer> _debouncers = {};
-
+  Timer? _verificarHora;
   var habitacionesList = <Habitaciones>[].obs;
   var isLoading = false.obs;
 
@@ -27,6 +27,81 @@ class HabitacionesController extends GetxController {
     super.onInit();
     if (currentUserId != null) {
       cargarHabitacionesUsuario();
+    }
+    _iniciarVerificador();
+  }
+
+  @override
+  void onClose() {
+    _pararVerificador();
+    super.onClose();
+  }
+
+  void _iniciarVerificador() {
+    _verificarHora?.cancel();
+    _verificarHora = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _aplicarVerificador(),
+    );
+    _aplicarVerificador();
+  }
+
+  void _pararVerificador() {
+    _verificarHora?.cancel();
+    _verificarHora = null;
+  }
+
+  // true si ahora está dentro del intervalo [encender, apagar) con soporte a cruce de medianoche
+  bool _isNowBetween(TimeOfDay on, TimeOfDay off, DateTime now) {
+    final start = DateTime(now.year, now.month, now.day, on.hour, on.minute);
+    final end = DateTime(now.year, now.month, now.day, off.hour, off.minute);
+
+    if (end.isAfter(start) || end.isAtSameMomentAs(start)) {
+      // mismo día: [start, end)
+      final afterStart = now.isAfter(start) || now.isAtSameMomentAs(start);
+      final beforeEnd = now.isBefore(end);
+      return afterStart && beforeEnd;
+    } else {
+      // cruza medianoche: [start, 24h) U [0h, end)
+      final afterStart = now.isAfter(start) || now.isAtSameMomentAs(start);
+      final beforeEnd = now.isBefore(end);
+      return afterStart || beforeEnd;
+    }
+  }
+
+  void _aplicarVerificador() async {
+    if (habitacionesList.isEmpty) return;
+
+    final now = DateTime.now();
+    final List<Habitaciones> habitacionesParaActualizar = [];
+
+    for (final h in habitacionesList) {
+      bool changed = false;
+
+      for (final l in h.luces) {
+        final encender = l.horaEncendido;
+        final apagar = l.horaApagado;
+
+        if (encender == null || apagar == null) continue;
+
+        final shouldBeOn = _isNowBetween(encender, apagar, now);
+        if (l.encendida != shouldBeOn) {
+          l.encendida = shouldBeOn;
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        h.actualizarProgreso();
+        habitacionesParaActualizar.add(h);
+      }
+    }
+
+    for (final h in habitacionesParaActualizar) {
+      await _actualizarHabitacionEnFirebase(h);
+    }
+    if (habitacionesParaActualizar.isNotEmpty) {
+      habitacionesList.refresh();
     }
   }
 
