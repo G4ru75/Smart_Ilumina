@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:flutter/services.dart';
 import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
 import 'package:smart_ilumina/controllers/usuarios_controller.dart';
 import 'package:smart_ilumina/firebase_options.dart';
@@ -13,6 +14,9 @@ void main() async {
   Get.put(UsuariosController());
   Get.put(HabitacionesController());
   await GetStorage.init();
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.immersiveSticky,
+  ); // hace que desaparezca la barra de accion de los moviles
 
   runApp(const MyApp());
 }

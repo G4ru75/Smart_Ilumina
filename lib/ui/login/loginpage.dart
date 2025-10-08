@@ -194,25 +194,10 @@ class _LoginPageState extends State<LoginPage> {
                   Center(
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder:
-                                (context, animation, secondaryAnimation) =>
-                                    Registerpage(),
-                            transitionsBuilder:
-                                (
-                                  context,
-                                  animation,
-                                  secondaryAnimation,
-                                  child,
-                                ) {
-                                  return FadeTransition(
-                                    opacity: animation,
-                                    child: child,
-                                  );
-                                },
-                          ),
+                        Get.to(
+                          () => Registerpage(),
+                          transition: Transition.fadeIn,
+                          duration: const Duration(milliseconds: 250),
                         );
                       },
                       child: TextosPequenos(texto: 'Registrarse'),

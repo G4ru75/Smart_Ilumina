@@ -25,7 +25,6 @@ class HabitacionesController extends GetxController {
   // Cargar habitaciones del usuario actual desde Firebase
   Future<void> cargarHabitacionesUsuario() async {
     if (currentUserId == null) {
-      print('Error: No hay usuario autenticado');
       return;
     }
 
@@ -54,7 +53,6 @@ class HabitacionesController extends GetxController {
       }
     } catch (e) {
       Get.snackbar('Error', 'Error al cargar habitaciones: $e');
-      print('Error cargando habitaciones: $e');
     } finally {
       isLoading.value = false;
     }
