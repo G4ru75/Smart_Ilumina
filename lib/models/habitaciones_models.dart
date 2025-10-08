@@ -40,8 +40,9 @@ class Habitaciones {
   factory Habitaciones.fromMap(Map<String, dynamic> map) {
     final habitacion = Habitaciones(
       nombre: map['nombre'] ?? '',
-      icon: IconData(map['icon']) ?? Icons.room,
-      color: Color(map['color']) ?? Colors.blue,
+      // map['icon'] debe existir; si no, usa codePoint de Icons.room
+      icon: IconData(map['icon'] ?? Icons.room.codePoint),
+      color: Color(map['color'] ?? Colors.blue.value),
       luces: (map['luces'] as List? ?? [])
           .map((luzMap) => Luces.fromMap(luzMap))
           .toList(),

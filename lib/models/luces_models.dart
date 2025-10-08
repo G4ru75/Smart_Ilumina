@@ -18,7 +18,8 @@ class Luces {
       'nombre': nombre,
       'encendida': encendida,
       'intensidad': intensidad,
-      'color': color.value,
+      // Usar representación ARGB explícita para evitar deprecated .value
+      'color': color.toARGB32(),
     };
   }
 

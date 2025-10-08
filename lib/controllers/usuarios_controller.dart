@@ -5,8 +5,6 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:smart_ilumina/models/usuarios_models.dart';
 
-import '../models/usuarios_models.dart';
-
 class UsuariosController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -21,14 +19,22 @@ class UsuariosController extends GetxController {
   }
 
   void _autoLogin() {
-    String? email = storage.read('email');
-    String? contrasena = storage.read('contrasena');
-    if (email != null && contrasena != null) {
-      loginUsuario(email, contrasena);
+    final String? email = storage.read('email');
+    final String? contrasena = storage.read('contrasena');
+    if (email != null &&
+        contrasena != null &&
+        email.isNotEmpty &&
+        contrasena.isNotEmpty) {
+      // No mostrar feedback visual en auto login silencioso
+      loginUsuario(email, contrasena, showFeedback: false);
     }
   }
 
-  Future<bool> loginUsuario(String email, String contrasena) async {
+  Future<bool> loginUsuario(
+    String email,
+    String contrasena, {
+    bool showFeedback = true,
+  }) async {
     try {
       isLoading.value = true;
       await _auth.signInWithEmailAndPassword(
@@ -37,24 +43,27 @@ class UsuariosController extends GetxController {
       );
       storage.write('email', email);
       storage.write('contrasena', contrasena);
-
-      Get.snackbar(
-        'Exito',
-        'Inicio de sesión exitoso',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
+      if (showFeedback) {
+        Get.snackbar(
+          'Éxito',
+          'Inicio de sesión exitoso',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      }
 
       isLoading.value = false;
       return true;
     } on FirebaseAuthException catch (e) {
       isLoading.value = false;
-      Get.snackbar(
-        'Error',
-        e.message ?? 'Error desconocido',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      if (showFeedback) {
+        Get.snackbar(
+          'Error',
+          e.message ?? 'Error desconocido',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
       return false;
     }
   }

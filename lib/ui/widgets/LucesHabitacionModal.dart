@@ -192,7 +192,8 @@ class LucesHabitacionModal extends StatelessWidget {
                                     value,
                                   );
                                 },
-                                activeColor: habitacion.color,
+                                activeThumbColor: Colors.white,
+                                activeTrackColor: habitacion.color,
                               ),
                             ],
                           ),

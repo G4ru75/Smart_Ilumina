@@ -304,4 +304,17 @@ class HabitacionesController extends GetxController {
     );
     return '$totalEncendidas/$totalLuces';
   }
+
+  // Agrega una nueva luz a una habitación existente (para integración QR / vinculación)
+  void agregarLuzAHabitacion({
+    required int habitacionIndex,
+    required Luces luz,
+  }) {
+    if (habitacionIndex < 0 || habitacionIndex >= habitacionesList.length)
+      return;
+    final habitacion = habitacionesList[habitacionIndex];
+    habitacion.luces.add(luz);
+    habitacion.actualizarProgreso();
+    habitacionesList.refresh();
+  }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/usuarios_controller.dart';
 import 'package:smart_ilumina/ui/widgets/textos.dart';
-import 'package:smart_ilumina/ui/home/homepage.dart';
 import 'package:smart_ilumina/ui/login/registerpage.dart';
 
 class LoginPage extends StatefulWidget {
@@ -85,144 +84,174 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Column(
-          children: [
-            SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-            Center(
-              child: Column(
-                children: [
-                  TextoSuperior(texto: 'Smart💡ilumina'),
-                  SizedBox(height: 1),
-                  Icon(
-                    Icons.lightbulb_outline,
-                    size: 200,
-                    color: Colors.blueAccent,
-                  ),
-                ],
-              ),
-            ),
-            Spacer(),
-            // Tarjeta del login
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Color(0xFFA9AED4),
-                border: Border.all(color: Colors.blueAccent, width: 2),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(100),
-                  topRight: Radius.circular(100),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 16,
-                    offset: Offset(0, -8),
-                  ),
-                ],
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 42),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(child: TextoSuperior(texto: 'Login')),
-                  SizedBox(height: 24),
-                  TextoField(
-                    contrasena: false,
-                    controlador: txtEmail,
-                    titulo: 'Email',
-                    textoSobre: 'Ingrese su correo electrónico',
-                  ),
-                  SizedBox(height: 10),
-                  TextoField(
-                    contrasena: true,
-                    controlador: txtContrasena,
-                    titulo: 'Contraseña',
-                    textoSobre: 'Ingrese su contraseña',
-                  ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.06),
-                  Center(
-                    child: Container(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 8,
-                          shadowColor: Colors.blueAccent,
-                        ),
-                        onPressed: () async {
-                          String validacion = Validacion();
-                          if (validacion != 'OK') {
-                            errorRegistro(context, validacion);
-                            return;
-                          }
-                          final ok = await usuariosController.loginUsuario(
-                            txtEmail.text.trim(),
-                            txtContrasena.text.trim(),
-                          );
-
-                          if (ok) {
-                            Get.offAllNamed('/home');
-                            txtContrasena.clear();
-                            txtEmail.clear();
-                          } else {
-                            errorRegistro(
-                              context,
-                              'Usuario o contraseña incorrecta',
-                            );
-                          }
-                        },
-                        child: Text(
-                          'Login',
-                          style: TextStyle(
-                            fontSize: 20,
-                            letterSpacing: 2,
-                            fontWeight: FontWeight.bold,
-                          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: viewInsets),
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.1,
+                      ),
+                      Center(
+                        child: Column(
+                          children: [
+                            TextoSuperior(texto: 'Smart💡ilumina'),
+                            const SizedBox(height: 1),
+                            const Icon(
+                              Icons.lightbulb_outline,
+                              size: 200,
+                              color: Colors.blueAccent,
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 15),
-                  Center(
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder:
-                                (context, animation, secondaryAnimation) =>
-                                    Registerpage(),
-                            transitionsBuilder:
-                                (
-                                  context,
-                                  animation,
-                                  secondaryAnimation,
-                                  child,
-                                ) {
-                                  return FadeTransition(
-                                    opacity: animation,
-                                    child: child,
+                      const Spacer(),
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFA9AED4),
+                          border: Border.all(
+                            color: Colors.blueAccent,
+                            width: 2,
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(100),
+                            topRight: Radius.circular(100),
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 16,
+                              offset: Offset(0, -8),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 42,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(child: TextoSuperior(texto: 'Login')),
+                            const SizedBox(height: 24),
+                            TextoField(
+                              contrasena: false,
+                              controlador: txtEmail,
+                              titulo: 'Email',
+                              textoSobre: 'Ingrese su correo electrónico',
+                            ),
+                            const SizedBox(height: 10),
+                            TextoField(
+                              contrasena: true,
+                              controlador: txtContrasena,
+                              titulo: 'Contraseña',
+                              textoSobre: 'Ingrese su contraseña',
+                            ),
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.06,
+                            ),
+                            Center(
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blueAccent,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 15,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 8,
+                                    shadowColor: Colors.blueAccent,
+                                  ),
+                                  onPressed: () async {
+                                    String validacion = Validacion();
+                                    if (validacion != 'OK') {
+                                      errorRegistro(context, validacion);
+                                      return;
+                                    }
+                                    final ok = await usuariosController
+                                        .loginUsuario(
+                                          txtEmail.text.trim(),
+                                          txtContrasena.text.trim(),
+                                        );
+                                    if (!mounted)
+                                      return; // Evita usar context si se desmontó
+                                    if (ok) {
+                                      Get.offAllNamed('/home');
+                                      txtContrasena.clear();
+                                      txtEmail.clear();
+                                    } else {
+                                      errorRegistro(
+                                        context,
+                                        'Usuario o contraseña incorrecta',
+                                      );
+                                    }
+                                  },
+                                  child: const Text(
+                                    'Login',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      letterSpacing: 2,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+                            Center(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    PageRouteBuilder(
+                                      pageBuilder:
+                                          (
+                                            context,
+                                            animation,
+                                            secondaryAnimation,
+                                          ) => Registerpage(),
+                                      transitionsBuilder:
+                                          (
+                                            context,
+                                            animation,
+                                            secondaryAnimation,
+                                            child,
+                                          ) {
+                                            return FadeTransition(
+                                              opacity: animation,
+                                              child: child,
+                                            );
+                                          },
+                                    ),
                                   );
                                 },
-                          ),
-                        );
-                      },
-                      child: TextosPequenos(texto: 'Registrarse'),
-                    ),
+                                child: TextosPequenos(texto: 'Registrarse'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

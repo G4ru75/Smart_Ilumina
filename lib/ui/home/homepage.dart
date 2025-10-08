@@ -51,18 +51,18 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFE6ECF5),
+      backgroundColor: const Color(0xFFE6ECF5),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Navbar(),
-              SizedBox(height: 15),
-              _buildInfoCards(),
-              SizedBox(height: 20),
-              HabitacionesCard(),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Navbar(),
+            const SizedBox(height: 15),
+            _buildInfoCards(),
+            const SizedBox(height: 10),
+            // El resto del espacio para el card con scroll interno
+            const Expanded(child: HabitacionesCard()),
+          ],
         ),
       ),
     );

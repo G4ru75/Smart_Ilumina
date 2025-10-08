@@ -10,8 +10,8 @@ import 'ui/app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  Get.put(UsuariosController());
   await GetStorage.init();
+  Get.put(UsuariosController());
   Get.put(HabitacionesController());
   runApp(const MyApp());
 }
