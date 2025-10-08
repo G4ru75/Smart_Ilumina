@@ -2,6 +2,8 @@ import 'package:smart_ilumina/models/luces_models.dart';
 import 'package:flutter/material.dart';
 
 class Habitaciones {
+  String id;
+  String idUsuario;
   String nombre;
   IconData icon;
   Color color;
@@ -10,13 +12,15 @@ class Habitaciones {
   double? progreso;
 
   Habitaciones({
+    String? id,
+    required this.idUsuario,
     required this.nombre,
     required this.icon,
     required this.color,
     required this.luces,
     this.valor,
     this.progreso,
-  });
+  }) : id = id ?? UniqueKey().toString();
 
   //Calcula el progreso dependiendo de las luces que hay y las que hay encendidas
   void actualizarProgreso() {
@@ -26,26 +30,37 @@ class Habitaciones {
     progreso = total == 0 ? 0.0 : encendidas / total;
   }
 
+  //Para enviarla bien a firebase
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
+      'idUsuario': idUsuario,
       'nombre': nombre,
       'icon': icon.codePoint, // Guardar el codePoint del icono
       'color': color.value,
       'luces': luces
           .map((luz) => luz.toMap())
           .toList(), // Convertir cada luz a un mapa
+      'valor': valor,
+      'progreso': progreso,
     };
   }
 
-  factory Habitaciones.fromMap(Map<String, dynamic> map) {
+  factory Habitaciones.fromFirebase(Map<String, dynamic> data) {
     final habitacion = Habitaciones(
-      nombre: map['nombre'] ?? '',
-      // map['icon'] debe existir; si no, usa codePoint de Icons.room
-      icon: IconData(map['icon'] ?? Icons.room.codePoint),
-      color: Color(map['color'] ?? Colors.blue.value),
-      luces: (map['luces'] as List? ?? [])
+      id: data['id'] ?? UniqueKey().toString(),
+      idUsuario: data['idUsuario'] ?? '',
+      nombre: data['nombre'] ?? '',
+      icon: IconData(
+        data['icon'] ?? Icons.home.codePoint,
+        fontFamily: 'MaterialIcons',
+      ),
+      color: Color(data['color'] ?? Colors.blue.value),
+      luces: (data['luces'] as List? ?? [])
           .map((luzMap) => Luces.fromMap(luzMap))
           .toList(),
+      valor: data['valor'],
+      progreso: (data['progreso'] ?? 0.0).toDouble(),
     );
     habitacion.actualizarProgreso();
     return habitacion;

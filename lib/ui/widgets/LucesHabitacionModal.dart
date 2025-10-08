@@ -67,8 +67,7 @@ class LucesHabitacionModal extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: Text(
-                        habitacion
-                            .nombre, // ✅ CORREGIDO: Muestra el nombre correcto
+                        habitacion.nombre,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
@@ -149,7 +148,7 @@ class LucesHabitacionModal extends StatelessWidget {
                                 ),
                               ),
 
-                              // ✅ AGREGADO: Botón de configuración
+                              // Botón de configuración
                               IconButton(
                                 icon: Icon(
                                   Icons.settings,
