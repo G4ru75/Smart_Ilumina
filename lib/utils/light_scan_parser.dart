@@ -63,6 +63,16 @@ class LightScanParser {
           map.containsKey('horaEncendido')) {
         final on = _parseTime(map['horaEncendido']);
         final off = _parseTime(map['horaApagado']);
+        final bool? isOn = map['encendida'] is bool
+            ? map['encendida'] as bool
+            : null;
+        final double? intensity = map['intensidad'] is num
+            ? (map['intensidad'] as num).toDouble().clamp(0.0, 1.0)
+            : null;
+        final Color? color = map['color'] is int
+            ? Color(map['color'] as int)
+            : null;
+
         return ParsedLightData(
           recognized: true,
           raw: raw,
@@ -71,6 +81,9 @@ class LightScanParser {
           type: map['tipo'] as String?,
           onTime: on,
           offTime: off,
+          color: color,
+          intensity: intensity,
+          isOn: isOn,
         );
       }
       // Intentar esquema A (a,r,g,b,intensity,isOn,name)

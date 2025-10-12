@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
+import 'package:smart_ilumina/controllers/luz_controller.dart';
+import '../../utils/lucesProgreso.dart';
 import 'LucesHabitacionModal.dart';
 import 'textos.dart';
 
@@ -12,7 +14,9 @@ class HabitacionesCard extends StatefulWidget {
 }
 
 class _HabitacionesCardState extends State<HabitacionesCard> {
-  final HabitacionesController habitacionesController = Get.find();
+  final HabitacionesController habitacionesController =
+      Get.find<HabitacionesController>();
+  final LucesController lucesController = Get.find<LucesController>();
 
   void _agregarHabitacion(String nombre) {
     setState(() {
@@ -190,33 +194,45 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      habitacion.nombre,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    Text(
-                                      habitacion.valor ?? '0/0',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[700],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    LinearProgressIndicator(
-                                      value: habitacion.progreso ?? 0.0,
-                                      minHeight: 7,
-                                      backgroundColor: Colors.grey[300],
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        habitacion.color,
-                                      ),
-                                    ),
-                                  ],
+                                // Progreso de luces por habitación (stream)
+                                child: StreamBuilder<LucesProgreso>(
+                                  stream: lucesController.progresoHabitacion(
+                                    habitacion.id,
+                                  ),
+                                  builder: (context, snap) {
+                                    final texto = snap.data?.texto ?? '0/0';
+                                    final valor = snap.data?.valor ?? 0.0;
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          habitacion.nombre,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        Text(
+                                          texto,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        LinearProgressIndicator(
+                                          value: valor,
+                                          minHeight: 7,
+                                          backgroundColor: Colors.grey[300],
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                habitacion.color,
+                                              ),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 ),
                               ),
                               Icon(

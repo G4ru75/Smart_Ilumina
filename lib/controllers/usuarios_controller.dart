@@ -12,8 +12,6 @@ class UsuariosController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final storage = GetStorage();
 
-  late final HabitacionesController _habitacionesController;
-
   final Rxn<Usuario> usuario = Rxn<Usuario>();
   var isLoading = false.obs;
 
@@ -21,14 +19,14 @@ class UsuariosController extends GetxController {
   void onInit() {
     super.onInit();
 
-    // Resolver el controlador ya registrado
+    /* Resolver el controlador ya registrado
     if (Get.isRegistered<HabitacionesController>()) {
       _habitacionesController = Get.find<HabitacionesController>();
     } else {
       // Evita crashear si aún no está registrado
       ever(isLoading, (_) {}); // no-op para mantener el ciclo
     }
-
+    */
     _autoLogin();
   }
 
@@ -56,8 +54,7 @@ class UsuariosController extends GetxController {
 
       // Cargar habitaciones (si el controlador existe)
       if (Get.isRegistered<HabitacionesController>()) {
-        _habitacionesController = Get.find<HabitacionesController>();
-        await _habitacionesController.cargarHabitacionesUsuario();
+        await Get.find<HabitacionesController>().cargarHabitacionesUsuario();
       }
       Get.snackbar(
         'Éxito',
@@ -81,7 +78,7 @@ class UsuariosController extends GetxController {
       debugPrint('Login post-auth error: $e\n$s');
       Get.snackbar(
         'Error',
-        'Ocurrió un problema al continuar',
+        '$e Ocurrió un problema al continuar',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -116,8 +113,7 @@ class UsuariosController extends GetxController {
           .set(nuevoUsuario.toMap());
 
       if (Get.isRegistered<HabitacionesController>()) {
-        _habitacionesController = Get.find<HabitacionesController>();
-        await _habitacionesController.cargarHabitacionesUsuario();
+        await Get.find<HabitacionesController>().cargarHabitacionesUsuario();
       }
 
       Get.snackbar(

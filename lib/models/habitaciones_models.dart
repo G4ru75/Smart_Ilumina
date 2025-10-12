@@ -1,4 +1,3 @@
-import 'package:smart_ilumina/models/luces_models.dart';
 import 'package:flutter/material.dart';
 
 class Habitaciones {
@@ -7,7 +6,6 @@ class Habitaciones {
   String nombre;
   IconData icon;
   Color color;
-  List<Luces> luces;
   String? valor;
   double? progreso;
 
@@ -17,15 +15,14 @@ class Habitaciones {
     required this.nombre,
     required this.icon,
     required this.color,
-    required this.luces,
     this.valor,
     this.progreso,
   }) : id = id ?? UniqueKey().toString();
 
   //Calcula el progreso dependiendo de las luces que hay y las que hay encendidas
   void actualizarProgreso() {
-    final int total = luces.length;
-    final int encendidas = luces.where((luces) => luces.encendida).length;
+    final int total = 0; // No hay luces
+    final int encendidas = 0; // No hay luces encendidas
     valor = total == 0 ? '0/0' : '$encendidas/$total';
     progreso = total == 0 ? 0.0 : encendidas / total;
   }
@@ -38,9 +35,6 @@ class Habitaciones {
       'nombre': nombre,
       'icon': icon.codePoint, // Guardar el codePoint del icono
       'color': color.value,
-      'luces': luces
-          .map((luz) => luz.toMap())
-          .toList(), // Convertir cada luz a un mapa
       'valor': valor,
       'progreso': progreso,
     };
@@ -56,9 +50,6 @@ class Habitaciones {
         fontFamily: 'MaterialIcons',
       ),
       color: Color(data['color'] ?? Colors.blue.value),
-      luces: (data['luces'] as List? ?? [])
-          .map((luzMap) => Luces.fromMap(luzMap))
-          .toList(),
       valor: data['valor'],
       progreso: (data['progreso'] ?? 0.0).toDouble(),
     );

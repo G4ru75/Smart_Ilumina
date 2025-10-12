@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
-import 'package:smart_ilumina/models/luces_models.dart';
+import 'package:smart_ilumina/controllers/luz_controller.dart';
 import 'package:smart_ilumina/utils/light_scan_parser.dart';
 
 class VincularLuzModal extends StatefulWidget {
-  final ParsedLightData data;
+  final ParsedLightData data; // datos del QR
+
   const VincularLuzModal({super.key, required this.data});
 
   @override
@@ -13,239 +14,144 @@ class VincularLuzModal extends StatefulWidget {
 }
 
 class _VincularLuzModalState extends State<VincularLuzModal> {
-  final HabitacionesController habitacionesController = Get.find();
-  late TextEditingController _nombreCtrl;
-  TimeOfDay? _onTime;
-  TimeOfDay? _offTime;
-  int? _habitacionIndex; // selected index
+  final HabitacionesController habController = Get.find();
+  final LucesController luzController = Get.find();
 
-  @override
-  void initState() {
-    super.initState();
-    _nombreCtrl = TextEditingController(
-      text: widget.data.name ?? widget.data.id ?? 'Nueva Luz',
-    );
-    _onTime = widget.data.onTime ?? const TimeOfDay(hour: 6, minute: 0);
-    _offTime = widget.data.offTime ?? const TimeOfDay(hour: 22, minute: 0);
-  }
-
-  @override
-  void dispose() {
-    _nombreCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickOnTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _onTime ?? TimeOfDay.now(),
-    );
-    if (picked != null) setState(() => _onTime = picked);
-  }
-
-  Future<void> _pickOffTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _offTime ?? TimeOfDay.now(),
-    );
-    if (picked != null) setState(() => _offTime = picked);
-  }
-
-  void _confirmar() {
-    final nombre = _nombreCtrl.text.trim();
-    if (nombre.isEmpty) {
-      Get.snackbar('Validación', 'El nombre no puede estar vacío');
-      return;
-    }
-    if (_habitacionIndex == null) {
-      Get.snackbar('Validación', 'Seleccione una habitación');
-      return;
-    }
-
-    final luz = Luces(
-      nombre: nombre,
-      encendida: widget.data.isOn ?? true,
-      intensidad: widget.data.intensity ?? 0.5,
-      color: widget.data.color ?? Colors.white,
-    );
-
-    habitacionesController.agregarLuzAHabitacion(
-      habitacionIndex: _habitacionIndex!,
-      luz: luz,
-    );
-
-    Get.back();
-    Get.snackbar('Luz vinculada', 'La luz "$nombre" fue añadida');
-  }
+  String? _habitacionIdSeleccionada;
+  bool _saving = false;
 
   @override
   Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
+    final luzId = widget.data.id ?? '';
+    final name = widget.data.name ?? '—';
+    final isOn = widget.data.isOn;
+    final intensity = widget.data.intensity;
+    final color = widget.data.color ?? Colors.grey;
+
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: Colors.black87, width: 1.5),
+        side: const BorderSide(color: Colors.black, width: 2),
       ),
-      child: AnimatedPadding(
-        duration: const Duration(milliseconds: 250),
-        padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Get.back(),
-                      icon: const Icon(Icons.arrow_back),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Obx(() {
+          final habitaciones = habController.habitacionesList;
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Vincular luz (Link light)',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+
+              // Info del QR
+              Row(
+                children: [
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black12),
                     ),
-                    const Expanded(
-                      child: Center(
-                        child: Text(
-                          'Vincular nueva luz',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(width: 48),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _nombreCtrl,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text('ID: $luzId'),
+              if (isOn != null) Text('Estado (State): ${isOn ? 'ON' : 'OFF'}'),
+              if (intensity != null)
+                Text('Intensidad (Intensity): ${(intensity * 100).round()}%'),
+              const SizedBox(height: 16),
+
+              // Selección de habitación
+              if (habitaciones.isEmpty)
+                const Text(
+                  'No hay habitaciones. Cree una para continuar. (No rooms found)',
+                )
+              else
+                DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
-                    labelText: 'Nombre de la luz',
+                    labelText: 'Seleccione habitación (Select room)',
                     border: OutlineInputBorder(),
                   ),
+                  value: _habitacionIdSeleccionada,
+                  items: habitaciones
+                      .map(
+                        (h) => DropdownMenuItem(
+                          value: h.id,
+                          child: Text(h.nombre),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) =>
+                      setState(() => _habitacionIdSeleccionada = v),
                 ),
-                const SizedBox(height: 16),
-                if (widget.data.type != null)
-                  Row(
-                    children: [
-                      const Icon(Icons.lightbulb_outline, size: 20),
-                      const SizedBox(width: 8),
-                      Text('Tipo: ${widget.data.type}'),
-                    ],
+
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _saving
+                          ? null
+                          : () => Navigator.pop(context, false),
+                      child: const Text('Cancelar / Cancel'),
+                    ),
                   ),
-                if (widget.data.type != null) const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _TimeField(
-                        label: 'Hora de encendido',
-                        time: _onTime,
-                        onTap: _pickOnTime,
-                      ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed:
+                          (_saving ||
+                              luzId.isEmpty ||
+                              _habitacionIdSeleccionada == null)
+                          ? null
+                          : () async {
+                              setState(() => _saving = true);
+                              try {
+                                // Lógica de vinculación (no modificada)
+                                await luzController.vincularALaHabitacion(
+                                  luzId: luzId,
+                                  habitacionId: _habitacionIdSeleccionada!,
+                                );
+                                if (mounted) Navigator.pop(context, true);
+                              } catch (e) {
+                                Get.snackbar(
+                                  'Vincular luz',
+                                  'No se pudo vincular: $e',
+                                );
+                              } finally {
+                                if (mounted) setState(() => _saving = false);
+                              }
+                            },
+                      child: _saving
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Vincular / Link'),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _TimeField(
-                        label: 'Hora de apagado',
-                        time: _offTime,
-                        onTap: _pickOffTime,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                GetX<HabitacionesController>(
-                  builder: (ctrl) {
-                    return DropdownButtonFormField<int>(
-                      decoration: const InputDecoration(
-                        labelText: 'Seleccione la habitación',
-                        border: OutlineInputBorder(),
-                      ),
-                      value: _habitacionIndex,
-                      items: [
-                        for (int i = 0; i < ctrl.habitacionesList.length; i++)
-                          DropdownMenuItem(
-                            value: i,
-                            child: Text(ctrl.habitacionesList[i].nombre),
-                          ),
-                      ],
-                      onChanged: (v) => setState(() => _habitacionIndex = v),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Get.back(),
-                        child: const Text('Cancelar'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: _confirmar,
-                        child: const Text(
-                          'Confirmar',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        }),
       ),
     );
-  }
-}
-
-class _TimeField extends StatelessWidget {
-  final String label;
-  final TimeOfDay? time;
-  final VoidCallback onTap;
-  const _TimeField({
-    required this.label,
-    required this.time,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final text = time != null ? _format(time!) : '--:--';
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 14,
-          ),
-        ),
-        child: Text(text),
-      ),
-    );
-  }
-
-  String _format(TimeOfDay t) {
-    final hh = t.hour.toString().padLeft(2, '0');
-    final mm = t.minute.toString().padLeft(2, '0');
-    return '$hh:$mm';
   }
 }

@@ -5,169 +5,81 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/models/habitaciones_models.dart';
-import 'package:smart_ilumina/models/luces_models.dart';
 
 class HabitacionesController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Debounce por luz para evitar muchas escrituras al arrastrar intensidad
-  final Map<String, Timer> _debouncers = {};
-  Timer? _verificarHora;
-  var habitacionesList = <Habitaciones>[].obs;
-  var isLoading = false.obs;
+  // Estado de habitaciones
+  final RxList<Habitaciones> habitacionesList = <Habitaciones>[].obs;
+  final RxBool isLoading = false.obs;
+
+  // Stream de habitaciones
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _habSub;
 
   String? get currentUserId => _auth.currentUser?.uid;
-
-  // Clave única por luz para debounce (habitacionId-luzId)
-  String _keyLuz(String habitacionId, String luzId) => '$habitacionId-$luzId';
 
   @override
   void onInit() {
     super.onInit();
+
+    // Reacciona a cambios de sesión
+    _auth.userChanges().listen((user) {
+      if (user == null) {
+        limpiarDatos();
+      } else {
+        cargarHabitacionesUsuario();
+      }
+    });
+
+    // Si ya hay sesión al iniciar
     if (currentUserId != null) {
       cargarHabitacionesUsuario();
     }
-    _iniciarVerificador();
   }
 
   @override
   void onClose() {
-    _pararVerificador();
+    _detenerStream();
     super.onClose();
   }
 
-  void _iniciarVerificador() {
-    _verificarHora?.cancel();
-    _verificarHora = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => _aplicarVerificador(),
-    );
-    _aplicarVerificador();
-  }
-
-  void _pararVerificador() {
-    _verificarHora?.cancel();
-    _verificarHora = null;
-  }
-
-  // true si ahora está dentro del intervalo [encender, apagar) con soporte a cruce de medianoche
-  bool _isNowBetween(TimeOfDay on, TimeOfDay off, DateTime now) {
-    final start = DateTime(now.year, now.month, now.day, on.hour, on.minute);
-    final end = DateTime(now.year, now.month, now.day, off.hour, off.minute);
-
-    if (end.isAfter(start) || end.isAtSameMomentAs(start)) {
-      // mismo día: [start, end)
-      final afterStart = now.isAfter(start) || now.isAtSameMomentAs(start);
-      final beforeEnd = now.isBefore(end);
-      return afterStart && beforeEnd;
-    } else {
-      // cruza medianoche: [start, 24h) U [0h, end)
-      final afterStart = now.isAfter(start) || now.isAtSameMomentAs(start);
-      final beforeEnd = now.isBefore(end);
-      return afterStart || beforeEnd;
-    }
-  }
-
-  void _aplicarVerificador() async {
-    if (habitacionesList.isEmpty) return;
-
-    final now = DateTime.now();
-    final List<Habitaciones> habitacionesParaActualizar = [];
-
-    for (final h in habitacionesList) {
-      bool changed = false;
-
-      for (final l in h.luces) {
-        final encender = l.horaEncendido;
-        final apagar = l.horaApagado;
-
-        if (encender == null || apagar == null) continue;
-
-        final shouldBeOn = _isNowBetween(encender, apagar, now);
-        if (l.encendida != shouldBeOn) {
-          l.encendida = shouldBeOn;
-          changed = true;
-        }
-      }
-
-      if (changed) {
-        h.actualizarProgreso();
-        habitacionesParaActualizar.add(h);
-      }
-    }
-
-    for (final h in habitacionesParaActualizar) {
-      await _actualizarHabitacionEnFirebase(h);
-    }
-    if (habitacionesParaActualizar.isNotEmpty) {
-      habitacionesList.refresh();
-    }
-  }
-
-  // Cargar habitaciones del usuario actual desde Firebase
+  // Escuchar habitaciones del usuario en tiempo real
   Future<void> cargarHabitacionesUsuario() async {
     final uid = currentUserId;
     if (uid == null) return;
 
-    try {
-      isLoading.value = true;
+    await _habSub?.cancel();
+    isLoading.value = true;
 
-      final QuerySnapshot snapshot = await _firestore
-          .collection('habitaciones')
-          .where('idUsuario', isEqualTo: uid)
-          .get();
+    _habSub = _firestore
+        .collection('habitaciones')
+        .where('idUsuario', isEqualTo: uid)
+        .snapshots()
+        .listen(
+          (snap) {
+            final lista = snap.docs
+                .where((d) => d.exists && d.data().isNotEmpty)
+                .map((d) => Habitaciones.fromFirebase(d.data()))
+                .toList();
 
-      final List<Habitaciones> habitaciones = snapshot.docs
-          .map(
-            (doc) =>
-                Habitaciones.fromFirebase(doc.data() as Map<String, dynamic>),
-          )
-          .toList();
+            // Orden opcional por nombre
+            lista.sort(
+              (a, b) =>
+                  a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase()),
+            );
 
-      // Actualizar progreso y ordenar en memoria (opcional)
-      for (var h in habitaciones) {
-        h.actualizarProgreso();
-      }
-      habitaciones.sort(
-        (a, b) => a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase()),
-      );
-
-      habitacionesList
-        ..clear()
-        ..addAll(habitaciones);
-    } catch (e) {
-      Get.snackbar('Error', 'Error al cargar habitaciones: $e');
-    } finally {
-      isLoading.value = false;
-    }
+            habitacionesList.assignAll(lista);
+            isLoading.value = false;
+          },
+          onError: (e) {
+            isLoading.value = false;
+            Get.snackbar('Habitaciones', 'Error al escuchar habitaciones: $e');
+          },
+        );
   }
 
-  // Guardar/crear habitación en Firebase (helper)
-  Future<void> _guardarHabitacion(Habitaciones habitacion) async {
-    try {
-      await _firestore
-          .collection('habitaciones')
-          .doc(habitacion.id)
-          .set(habitacion.toMap());
-    } catch (e) {
-      Get.snackbar('Error', 'Error al guardar habitación: $e');
-    }
-  }
-
-  // Actualizar habitación en Firebase (helper)
-  Future<void> _actualizarHabitacionEnFirebase(Habitaciones habitacion) async {
-    try {
-      await _firestore
-          .collection('habitaciones')
-          .doc(habitacion.id)
-          .update(habitacion.toMap());
-    } catch (e) {
-      debugPrint('Error actualizando habitación en Firebase: $e');
-    }
-  }
-
-  // Agregar nueva habitación con luces estáticas
+  // Crear habitación (sin array de luces en el doc)
   Future<void> agregarHabitacion(
     String nombre, {
     IconData? icon,
@@ -175,221 +87,85 @@ class HabitacionesController extends GetxController {
   }) async {
     final uid = currentUserId;
     if (uid == null) {
-      Get.snackbar('Error', 'Debe estar autenticado para agregar habitaciones');
+      Get.snackbar('Habitaciones', 'Debe estar autenticado');
       return;
     }
-
     if (nombre.trim().isEmpty) {
-      Get.snackbar('Error', 'El nombre de la habitación no puede estar vacío');
+      Get.snackbar('Habitaciones', 'El nombre no puede estar vacío');
       return;
     }
 
     try {
-      final nuevaHabitacion = Habitaciones(
-        idUsuario: uid,
-        nombre: nombre.trim(),
-        icon: icon ?? Icons.home,
-        color: color ?? Colors.purple,
-        luces: [],
-      );
+      final id = _firestore.collection('habitaciones').doc().id;
+      final data = {
+        'id': UniqueKey().toString(),
+        'idUsuario': uid,
+        'nombre': nombre.trim(),
+        if (icon != null) 'icon': icon.codePoint,
+        if (color != null) 'color': color.value,
+        'createdAt': FieldValue.serverTimestamp(),
+        // Importante: no guardar campo "luces"
+      };
 
-      // Crear luces estáticas para la habitación
-      final lucesEstaticas = _crearLucesEstaticas(nuevaHabitacion.id);
-      nuevaHabitacion.luces.addAll(lucesEstaticas);
-      nuevaHabitacion.actualizarProgreso();
-
-      // Guardar en Firebase y en memoria
-      await _guardarHabitacion(nuevaHabitacion);
-      habitacionesList.add(nuevaHabitacion);
-
-      Get.snackbar(
-        'Éxito',
-        'Habitación "$nombre" creada con ${lucesEstaticas.length} luces',
-      );
+      await _firestore.collection('habitaciones').doc(id).set(data);
+      Get.snackbar('Habitaciones', 'Habitación "$nombre" creada');
+      // El stream actualizará habitacionesList
     } catch (e) {
-      Get.snackbar('Error', 'Error al crear habitación: $e');
+      Get.snackbar('Habitaciones', 'No se pudo crear: $e');
     }
   }
 
-  // Crear luces estáticas para una habitación
-  List<Luces> _crearLucesEstaticas(String habitacionId) {
-    return [
-      Luces(
-        id: UniqueKey().toString(),
-        nombre: 'Luz Principal',
-        encendida: true,
-        intensidad: 0.8,
-        color: Colors.amber,
-        idHabitacion: habitacionId,
-        vinculada: true,
-        horaEncendido: const TimeOfDay(hour: 18, minute: 0),
-        horaApagado: const TimeOfDay(hour: 23, minute: 0),
-      ),
-      Luces(
-        id: UniqueKey().toString(),
-        nombre: 'Luz Secundaria',
-        encendida: false,
-        intensidad: 0.5,
-        color: Colors.white,
-        idHabitacion: habitacionId,
-        vinculada: true,
-        horaEncendido: const TimeOfDay(hour: 18, minute: 0),
-        horaApagado: const TimeOfDay(hour: 23, minute: 0),
-      ),
-      Luces(
-        id: UniqueKey().toString(),
-        nombre: 'Luz Ambiente',
-        encendida: true,
-        intensidad: 0.3,
-        color: Colors.blue,
-        idHabitacion: habitacionId,
-        vinculada: true,
-        horaEncendido: const TimeOfDay(hour: 18, minute: 0),
-        horaApagado: const TimeOfDay(hour: 23, minute: 0),
-      ),
-    ];
-  }
-
-  // Configurar luz (actualiza inmediatamente en Firebase)
-  Future<void> configurarLuz(
-    int habitacionIndex,
-    int luzIndex, {
-    bool? encendida,
-    double? intensidad,
+  // Actualizar datos básicos de la habitación
+  Future<void> actualizarHabitacion(
+    String habitacionId, {
+    String? nombre,
+    IconData? icon,
     Color? color,
-    TimeOfDay? horaEncendido,
-    TimeOfDay? horaApagado,
   }) async {
-    if (habitacionIndex < 0 || habitacionIndex >= habitacionesList.length)
-      return;
-    final habitacion = habitacionesList[habitacionIndex];
-    if (luzIndex < 0 || luzIndex >= habitacion.luces.length) return;
+    final data = <String, dynamic>{};
+    if (nombre != null) data['nombre'] = nombre.trim();
+    if (icon != null) data['icon'] = icon.codePoint;
+    if (color != null) data['color'] = color.value;
 
-    final luz = habitacion.luces[luzIndex];
+    if (data.isEmpty) return;
 
-    if (encendida != null) luz.encendida = encendida;
-    if (intensidad != null) luz.intensidad = intensidad.clamp(0.0, 1.0);
-    if (color != null) luz.color = color;
-    if (horaEncendido != null) luz.horaEncendido = horaEncendido;
-    if (horaApagado != null) luz.horaApagado = horaApagado;
-
-    habitacion.actualizarProgreso();
-
-    await _actualizarHabitacionEnFirebase(habitacion);
-    habitacionesList.refresh();
-  }
-
-  // Cambiar estado de una luz (on/off) y actualizar en Firebase
-  Future<void> cambiarEstadoLuz(
-    int habitacionIndex,
-    int luzIndex,
-    bool encendida,
-  ) async {
-    if (habitacionIndex < 0 || habitacionIndex >= habitacionesList.length)
-      return;
-    final habitacion = habitacionesList[habitacionIndex];
-    if (luzIndex < 0 || luzIndex >= habitacion.luces.length) return;
-
-    habitacion.luces[luzIndex].encendida = encendida;
-    habitacion.actualizarProgreso();
-
-    await _actualizarHabitacionEnFirebase(habitacion);
-    habitacionesList.refresh();
-  }
-
-  // Cambiar color de una luz y actualizar en Firebase
-  Future<void> cambiarColorLuz(
-    int habitacionIndex,
-    int luzIndex,
-    Color color,
-  ) async {
-    if (habitacionIndex < 0 || habitacionIndex >= habitacionesList.length)
-      return;
-    final habitacion = habitacionesList[habitacionIndex];
-    if (luzIndex < 0 || luzIndex >= habitacion.luces.length) return;
-
-    habitacion.luces[luzIndex].color = color;
-    await _actualizarHabitacionEnFirebase(habitacion);
-    habitacionesList.refresh();
-  }
-
-  // Cambiar intensidad con debounce para no saturar escrituras
-  void cambiarIntensidadLuzDebounced(
-    int habitacionIndex,
-    int luzIndex,
-    double value,
-  ) {
-    if (habitacionIndex < 0 || habitacionIndex >= habitacionesList.length)
-      return;
-    final habitacion = habitacionesList[habitacionIndex];
-    if (luzIndex < 0 || luzIndex >= habitacion.luces.length) return;
-
-    final luz = habitacion.luces[luzIndex];
-    luz.intensidad = value.clamp(0.0, 1.0);
-
-    final key = _keyLuz(habitacion.id, luz.id);
-    _debouncers[key]?.cancel();
-    _debouncers[key] = Timer(const Duration(milliseconds: 180), () async {
-      await _actualizarHabitacionEnFirebase(habitacion);
-      _debouncers.remove(key);
-    });
-
-    habitacionesList.refresh();
-  }
-
-  // Cambiar horas programadas y actualizar en Firebase
-  Future<void> cambiarHorasLuz(
-    int habitacionIndex,
-    int luzIndex, {
-    TimeOfDay? horaEncendido,
-    TimeOfDay? horaApagado,
-  }) async {
-    if (habitacionIndex < 0 || habitacionIndex >= habitacionesList.length)
-      return;
-    final habitacion = habitacionesList[habitacionIndex];
-    if (luzIndex < 0 || luzIndex >= habitacion.luces.length) return;
-
-    final luz = habitacion.luces[luzIndex];
-    if (horaEncendido != null) luz.horaEncendido = horaEncendido;
-    if (horaApagado != null) luz.horaApagado = horaApagado;
-
-    await _actualizarHabitacionEnFirebase(habitacion);
-    habitacionesList.refresh();
-  }
-
-  // Cambiar estado de todas las luces de una habitación y actualizar en Firebase
-  Future<void> cambiarEstadoTodasLuces(
-    int habitacionIndex,
-    bool encendida,
-  ) async {
-    if (habitacionIndex < 0 || habitacionIndex >= habitacionesList.length)
-      return;
-    final habitacion = habitacionesList[habitacionIndex];
-
-    for (var luz in habitacion.luces) {
-      luz.encendida = encendida;
+    try {
+      await _firestore
+          .collection('habitaciones')
+          .doc(habitacionId)
+          .update(data);
+      Get.snackbar('Habitaciones', 'Habitación actualizada');
+    } catch (e) {
+      Get.snackbar('Habitaciones', 'No se pudo actualizar: $e');
     }
-    habitacion.actualizarProgreso();
-
-    await _actualizarHabitacionEnFirebase(habitacion);
-    habitacionesList.refresh();
   }
 
-  // Recargar habitaciones (pull-to-refresh)
+  // Eliminar habitación (no toca colección luces)
+  Future<void> eliminarHabitacion(String habitacionId) async {
+    try {
+      await _firestore.collection('habitaciones').doc(habitacionId).delete();
+      Get.snackbar('Habitaciones', 'Habitación eliminada');
+      // El stream removerá la habitación de la lista
+    } catch (e) {
+      Get.snackbar('Habitaciones', 'No se pudo eliminar: $e');
+    }
+  }
+
+  // Recargar (reinicia el stream)
   Future<void> recargarHabitaciones() async {
     await cargarHabitacionesUsuario();
   }
 
-  // Limpiar datos al cerrar sesión
+  // Limpiar datos (al cerrar sesión)
   void limpiarDatos() {
-    // Cancelar debouncers pendientes
-    for (final t in _debouncers.values) {
-      t.cancel();
-    }
-    _debouncers.clear();
-
+    _detenerStream();
     habitacionesList.clear();
     isLoading.value = false;
+  }
+
+  void _detenerStream() {
+    _habSub?.cancel();
+    _habSub = null;
   }
 
   // Obtener habitación por índice
@@ -398,44 +174,4 @@ class HabitacionesController extends GetxController {
       return habitacionesList[index];
     return null;
   }
-
-  // Agrega una nueva luz a una habitación y persiste inmediatamente
-  Future<void> agregarLuzAHabitacion({
-    required int habitacionIndex,
-    required Luces luz,
-  }) async {
-    if (habitacionIndex < 0 || habitacionIndex >= habitacionesList.length)
-      return;
-    final habitacion = habitacionesList[habitacionIndex];
-
-    habitacion.luces.add(luz);
-    habitacion.actualizarProgreso();
-
-    await _actualizarHabitacionEnFirebase(habitacion);
-    habitacionesList.refresh();
-  }
-
-  // Estadísticas para las InfoCards
-  String cantidadLuces() {
-    if (habitacionesList.isEmpty) return '0/0';
-
-    final totalLuces = habitacionesList.fold<int>(
-      0,
-      (sum, h) => sum + h.luces.length,
-    );
-    final totalEncendidas = habitacionesList.fold<int>(
-      0,
-      (sum, h) => sum + h.luces.where((l) => l.encendida).length,
-    );
-
-    return '$totalEncendidas/$totalLuces';
-  }
-
-  int get totalHabitaciones => habitacionesList.length;
-  int get totalLuces =>
-      habitacionesList.fold(0, (sum, h) => sum + h.luces.length);
-  int get lucesEncendidas => habitacionesList.fold(
-    0,
-    (sum, h) => sum + h.luces.where((l) => l.encendida).length,
-  );
 }
