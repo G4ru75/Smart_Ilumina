@@ -185,3 +185,20 @@ class HoraInputField extends StatelessWidget {
     );
   }
 }
+
+class textoMediano extends StatelessWidget {
+  final String texto;
+  const textoMediano({super.key, required this.texto});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      texto,
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1,
+      ),
+    );
+  }
+}

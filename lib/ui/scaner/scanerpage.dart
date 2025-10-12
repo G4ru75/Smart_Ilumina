@@ -20,9 +20,9 @@ class _ScanerPageState extends State<ScanerPage> {
     final parsed = LightScanParser.parse(raw);
     if (!parsed.recognized || parsed.id == null || parsed.id!.trim().isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('QR inválido / Invalid QR')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('QR inválido')));
       }
       return;
     }
@@ -35,11 +35,9 @@ class _ScanerPageState extends State<ScanerPage> {
       );
       if (mounted && result == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Luz vinculada con éxito (Linked successfully)'),
-          ),
+          const SnackBar(content: Text('Luz vinculada con éxito')),
         );
-        Navigator.of(context).maybePop(); // opcional: volver atrás tras éxito
+        Navigator.of(context).maybePop(); //volver atrás tras éxito
       }
     } finally {
       // Permitir nuevos escaneos si sigues en esta pantalla
@@ -56,7 +54,7 @@ class _ScanerPageState extends State<ScanerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Escanear luz / Scan light')),
+      appBar: AppBar(title: const Text('Escanear luz')),
       body: Stack(
         children: [
           MobileScanner(
@@ -81,7 +79,7 @@ class _ScanerPageState extends State<ScanerPage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
-                  'Apunte al QR de la luz • Point to the light QR',
+                  'Apunte al QR de la luz',
                   style: TextStyle(color: Colors.white),
                 ),
               ),

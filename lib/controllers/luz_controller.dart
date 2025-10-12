@@ -118,12 +118,12 @@ class LucesController extends GetxController {
   Future<void> cambiarEstadoLuz(String luzId, bool encendida) async {
     // Optimista
     _setLocal(luzId, (l) => l.encendida = encendida);
-    await _updateLuz(luzId, {'encendida': encendida});
+    await _ActualizarLuz(luzId, {'encendida': encendida});
   }
 
   Future<void> cambiarColor(String luzId, Color color) async {
     _setLocal(luzId, (l) => l.color = color);
-    await _updateLuz(luzId, {'color': color.value});
+    await _ActualizarLuz(luzId, {'color': color.value});
   }
 
   void cambiarIntensidadDebounced(String luzId, double valor) {
@@ -133,7 +133,7 @@ class LucesController extends GetxController {
     // Debounce para escribir en Firestore
     _debouncers[luzId]?.cancel();
     _debouncers[luzId] = Timer(const Duration(milliseconds: 180), () async {
-      await _updateLuz(luzId, {'intensidad': valor.clamp(0.0, 1.0)});
+      await _ActualizarLuz(luzId, {'intensidad': valor.clamp(0.0, 1.0)});
       _debouncers.remove(luzId);
     });
   }
@@ -146,20 +146,20 @@ class LucesController extends GetxController {
     final data = <String, dynamic>{};
     if (horaEncendido != null) {
       data['horaEncendido'] = {
-        'hour': horaEncendido.hour,
-        'minute': horaEncendido.minute,
+        'hora': horaEncendido.hour,
+        'minuto': horaEncendido.minute,
       };
       _setLocal(luzId, (l) => l.horaEncendido = horaEncendido);
     }
     if (horaApagado != null) {
       data['horaApagado'] = {
-        'hour': horaApagado.hour,
-        'minute': horaApagado.minute,
+        'hora': horaApagado.hour,
+        'minuto': horaApagado.minute,
       };
       _setLocal(luzId, (l) => l.horaApagado = horaApagado);
     }
     if (data.isNotEmpty) {
-      await _updateLuz(luzId, data);
+      await _ActualizarLuz(luzId, data);
     }
   }
 
@@ -251,7 +251,7 @@ class LucesController extends GetxController {
     }
   }
 
-  Future<void> _updateLuz(String luzId, Map<String, dynamic> data) async {
+  Future<void> _ActualizarLuz(String luzId, Map<String, dynamic> data) async {
     try {
       await _firestore.collection(nombreColeccion).doc(luzId).update(data);
     } catch (e) {

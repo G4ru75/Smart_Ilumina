@@ -48,9 +48,7 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
       }
 
       final titulo = 'Configurar: ${luz.nombre}';
-      final colorActual = Color(
-        luz.color.value,
-      ); // asegúrate que luz.color sea Color
+      final colorActual = Color(luz.color.value);
 
       final presets = <Color>[
         Colors.blue,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
 import 'package:smart_ilumina/controllers/luz_controller.dart';
+import 'package:smart_ilumina/ui/widgets/textos.dart';
 import 'package:smart_ilumina/utils/light_scan_parser.dart';
 
 class VincularLuzModal extends StatefulWidget {
@@ -23,9 +24,9 @@ class _VincularLuzModalState extends State<VincularLuzModal> {
   @override
   Widget build(BuildContext context) {
     final luzId = widget.data.id ?? '';
-    final name = widget.data.name ?? '—';
-    final isOn = widget.data.isOn;
-    final intensity = widget.data.intensity;
+    final nombre = widget.data.name ?? '—';
+    final encendida = widget.data.isOn;
+    final intensidad = widget.data.intensity;
     final color = widget.data.color ?? Colors.grey;
 
     return Dialog(
@@ -36,16 +37,14 @@ class _VincularLuzModalState extends State<VincularLuzModal> {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Obx(() {
+          //Se toman la lista de las habitaciones disponibles
           final habitaciones = habController.habitacionesList;
 
           return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Vincular luz (Link light)',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              const textoMediano(texto: 'Vincular luz escaneada'),
               const SizedBox(height: 12),
 
               // Info del QR
@@ -63,7 +62,7 @@ class _VincularLuzModalState extends State<VincularLuzModal> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      name,
+                      nombre,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -71,16 +70,15 @@ class _VincularLuzModalState extends State<VincularLuzModal> {
               ),
               const SizedBox(height: 8),
               Text('ID: $luzId'),
-              if (isOn != null) Text('Estado (State): ${isOn ? 'ON' : 'OFF'}'),
-              if (intensity != null)
-                Text('Intensidad (Intensity): ${(intensity * 100).round()}%'),
+              if (encendida != null)
+                Text('Estado: ${encendida ? 'ON' : 'OFF'}'),
+              if (intensidad != null)
+                Text('Intensidad: ${(intensidad * 100).round()}%'),
               const SizedBox(height: 16),
 
               // Selección de habitación
               if (habitaciones.isEmpty)
-                const Text(
-                  'No hay habitaciones. Cree una para continuar. (No rooms found)',
-                )
+                const Text('No hay habitaciones. Cree una para continuar.')
               else
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
@@ -108,7 +106,7 @@ class _VincularLuzModalState extends State<VincularLuzModal> {
                       onPressed: _saving
                           ? null
                           : () => Navigator.pop(context, false),
-                      child: const Text('Cancelar / Cancel'),
+                      child: const Text('Cancelar'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -122,7 +120,6 @@ class _VincularLuzModalState extends State<VincularLuzModal> {
                           : () async {
                               setState(() => _saving = true);
                               try {
-                                // Lógica de vinculación (no modificada)
                                 await luzController.vincularALaHabitacion(
                                   luzId: luzId,
                                   habitacionId: _habitacionIdSeleccionada!,
@@ -143,7 +140,7 @@ class _VincularLuzModalState extends State<VincularLuzModal> {
                               width: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Vincular / Link'),
+                          : const Text('Vincular'),
                     ),
                   ),
                 ],
