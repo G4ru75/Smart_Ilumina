@@ -73,12 +73,8 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                               ),
                               const Expanded(
                                 child: Center(
-                                  child: Text(
-                                    'Agregar Habitación',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                    ),
+                                  child: textoMediano(
+                                    texto: 'Agregar habitación',
                                   ),
                                 ),
                               ),
@@ -146,10 +142,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Habitaciones',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-            ),
+            const textoMediano(texto: 'Habitaciones'),
             const SizedBox(height: 8),
             Expanded(
               child: Obx(() {
@@ -261,14 +254,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                   ),
                 ),
                 onPressed: _mostrarAgregarHabitacionModal,
-                child: const Text(
-                  'Agregar habitación',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
-                ),
+                child: const TextosPequenos(texto: 'Agregar habitación'),
               ),
             ),
           ],
