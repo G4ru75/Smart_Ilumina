@@ -30,11 +30,16 @@ class _HomePageState extends State<HomePage> {
               informacion: lucesController.progreso,
               color: Colors.yellow[700]!,
             ),
-            InfoCard(
-              icono: Icons.access_time,
-              titulo: 'Horarios',
-              informacion: 'Gestionar\nhorarios',
-              color: Colors.grey[700]!,
+            GestureDetector(
+              onTap: () {
+                Get.toNamed('/horarios');
+              },
+              child: InfoCard(
+                icono: Icons.access_time,
+                titulo: 'Horarios',
+                informacion: 'Gestionar\nhorarios',
+                color: Colors.grey[700]!,
+              ),
             ),
             InfoCard(
               icono: Icons.flash_on,

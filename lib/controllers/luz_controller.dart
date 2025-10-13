@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
+import 'package:smart_ilumina/models/habitaciones_models.dart';
 import 'package:smart_ilumina/models/luces_models.dart';
 import 'package:smart_ilumina/utils/lucesProgreso.dart';
 
@@ -136,6 +138,40 @@ class LucesController extends GetxController {
       await _ActualizarLuz(luzId, {'intensidad': valor.clamp(0.0, 1.0)});
       _debouncers.remove(luzId);
     });
+  }
+
+  Stream<List<Luces>> todasLasLucesVinculadas() {
+    try {
+      final habitacionesController = Get.find<HabitacionesController>();
+
+      if (habitacionesController.habitacionesList().isEmpty) {
+        return Stream.value([]);
+      }
+
+      final habitacionesIds = habitacionesController
+          .habitacionesList()
+          .map((h) => h.id)
+          .toList();
+
+      if (habitacionesIds.isEmpty) {
+        return Stream.value([]);
+      }
+
+      return _firestore
+          .collection(nombreColeccion)
+          .where('vinculada', isEqualTo: true)
+          .where('idHabitacion', whereIn: habitacionesIds)
+          .snapshots()
+          .map(
+            (querySnapshot) => querySnapshot.docs
+                .where((doc) => doc.exists && doc.data().isNotEmpty)
+                .map((doc) => Luces.fromMap(doc.data()))
+                .toList(),
+          );
+    } catch (e) {
+      Get.snackbar('Error', 'No se pudo obtener las luces vinculadas: $e');
+      return Stream.value([]);
+    }
   }
 
   Future<void> cambiarHoras(
