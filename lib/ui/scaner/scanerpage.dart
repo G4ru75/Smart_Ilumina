@@ -5,71 +5,92 @@ import 'package:smart_ilumina/utils/light_scan_parser.dart';
 import 'package:smart_ilumina/ui/widgets/VincularLuzModal.dart';
 
 class ScanerPage extends StatefulWidget {
-  const ScanerPage({Key? key}) : super(key: key);
+  const ScanerPage({super.key});
 
   @override
   State<ScanerPage> createState() => _ScanerPageState();
 }
 
 class _ScanerPageState extends State<ScanerPage> {
-  MobileScannerController cameraController = MobileScannerController();
-  bool _procesando = false;
+  final MobileScannerController _controller = MobileScannerController();
+  bool _handling = false;
 
-  void _onCode(String code) {
-    final parsed = LightScanParser.parse(code);
-    if (!parsed.recognized) {
-      Get.snackbar(
-        'QR no reconocido',
-        'El código escaneado no pertenece a una luz válida',
-      );
-      _resetScan();
+  Future<void> _handleCode(String? raw) async {
+    if (_handling || raw == null || raw.trim().isEmpty) return;
+    final parsed = LightScanParser.parse(raw);
+    if (!parsed.recognized || parsed.id == null || parsed.id!.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('QR inválido')));
+      }
       return;
     }
-    Get.dialog(VincularLuzModal(data: parsed), barrierDismissible: false).then((
-      _,
-    ) {
-      // Al cerrar el modal (confirmado o cancelado) salimos de la pantalla para volver al flujo anterior
-      if (mounted) Navigator.of(context).pop();
-    });
+
+    _handling = true;
+    try {
+      final result = await Get.dialog(
+        VincularLuzModal(data: parsed),
+        barrierDismissible: false,
+      );
+      if (mounted && result == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Luz vinculada con éxito')),
+        );
+        Navigator.of(context).maybePop(); //volver atrás tras éxito
+      }
+    } finally {
+      // Permitir nuevos escaneos si sigues en esta pantalla
+      _handling = false;
+    }
   }
 
-  void _resetScan() {
-    setState(() => _procesando = false);
-    cameraController.start();
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Escanea el código QR'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.flash_on),
-            onPressed: () => cameraController.toggleTorch(),
+      appBar: AppBar(title: const Text('Escanear luz')),
+      body: Stack(
+        children: [
+          MobileScanner(
+            controller: _controller,
+            onDetect: (capture) {
+              final codes = capture.barcodes;
+              if (codes.isEmpty) return;
+              _handleCode(codes.first.rawValue);
+            },
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'Apunte al QR de la luz',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: MobileScanner(
-        controller: cameraController,
-        onDetect: (capture) {
-          if (_procesando) return;
-          if (capture.barcodes.isEmpty) return;
-          final code = capture.barcodes.first.rawValue ?? '';
-          if (code.isEmpty) return;
-          setState(() => _procesando = true);
-          cameraController.stop();
-          _onCode(code);
-        },
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.cameraswitch),
+        onPressed: () => _controller.switchCamera(),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    cameraController.dispose();
-    super.dispose();
   }
 }

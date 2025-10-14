@@ -135,3 +135,70 @@ class InputFecha extends StatelessWidget {
     );
   }
 }
+
+class HoraInputField extends StatelessWidget {
+  final String titulo;
+  final TimeOfDay? value;
+  final ValueChanged<TimeOfDay?> onChanged;
+  final EdgeInsetsGeometry padding;
+  final bool enabled;
+
+  const HoraInputField({
+    super.key,
+    required this.titulo,
+    required this.value,
+    required this.onChanged,
+    this.padding = const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+    this.enabled = true,
+  });
+
+  String _fmt(BuildContext context) {
+    return value == null ? '— — : — —' : value!.format(context);
+  }
+
+  Future<void> _pick(BuildContext context) async {
+    if (!enabled) return;
+    final initial = value ?? const TimeOfDay(hour: 18, minute: 0);
+    final picked = await showTimePicker(context: context, initialTime: initial);
+    if (picked != null) onChanged(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: padding,
+      child: InkWell(
+        onTap: () => _pick(context),
+        borderRadius: BorderRadius.circular(8),
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: titulo,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+          ),
+          child: Text(_fmt(context)),
+        ),
+      ),
+    );
+  }
+}
+
+class textoMediano extends StatelessWidget {
+  final String texto;
+  const textoMediano({super.key, required this.texto});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      texto,
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1,
+      ),
+    );
+  }
+}

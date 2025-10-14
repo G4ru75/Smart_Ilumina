@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_ilumina/ui/gestionarHorarios/gestionarHorariospage.dart';
 import 'package:smart_ilumina/ui/login/loginpage.dart';
 import 'package:smart_ilumina/ui/home/homepage.dart';
 import 'package:smart_ilumina/ui/login/registerpage.dart';
@@ -37,6 +38,12 @@ class MyApp extends StatelessWidget {
         GetPage(
           name: '/scaner',
           page: () => ScanerPage(),
+          transition: Transition.fadeIn,
+          transitionDuration: const Duration(milliseconds: 250),
+        ),
+        GetPage(
+          name: '/horarios',
+          page: () => HorariosPage(),
           transition: Transition.fadeIn,
           transitionDuration: const Duration(milliseconds: 250),
         ),

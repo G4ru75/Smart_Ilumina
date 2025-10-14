@@ -12,9 +12,6 @@ class UsuariosController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final storage = GetStorage();
 
-  // NO hagas Get.find() aquí
-  late final HabitacionesController _habitacionesController;
-
   final Rxn<Usuario> usuario = Rxn<Usuario>();
   var isLoading = false.obs;
 
@@ -22,14 +19,14 @@ class UsuariosController extends GetxController {
   void onInit() {
     super.onInit();
 
-    // Resolver el controlador ya registrado
+    /* Resolver el controlador ya registrado
     if (Get.isRegistered<HabitacionesController>()) {
       _habitacionesController = Get.find<HabitacionesController>();
     } else {
       // Evita crashear si aún no está registrado
       ever(isLoading, (_) {}); // no-op para mantener el ciclo
     }
-
+    */
     _autoLogin();
   }
 
@@ -40,24 +37,11 @@ class UsuariosController extends GetxController {
         contrasena != null &&
         email.isNotEmpty &&
         contrasena.isNotEmpty) {
-      // No mostrar feedback visual en auto login silencioso
-      loginUsuario(email, contrasena, showFeedback: false);
-    try {
-      final email = storage.read<String>('email');
-      final contrasena = storage.read<String>('contrasena');
-      if (email != null && contrasena != null) {
-        loginUsuario(email, contrasena);
-      }
-    } catch (_) {
-      // ignora si GetStorage no está listo
+      loginUsuario(email, contrasena);
     }
   }
 
-  Future<bool> loginUsuario(
-    String email,
-    String contrasena, {
-    bool showFeedback = true,
-  }) async {
+  Future<bool> loginUsuario(String email, String contrasena) async {
     try {
       isLoading.value = true;
 
@@ -67,45 +51,22 @@ class UsuariosController extends GetxController {
       );
       storage.write('email', email);
       storage.write('contrasena', contrasena);
-      if (showFeedback) {
-        Get.snackbar(
-          'Éxito',
-          'Inicio de sesión exitoso',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-      }
-
-      isLoading.value = false;
-      return true;
-    } on FirebaseAuthException catch (e) {
-      isLoading.value = false;
-      if (showFeedback) {
-        Get.snackbar(
-          'Error',
-          e.message ?? 'Error desconocido',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-      }
-
-      await storage.write('email', email);
-      await storage.write('contrasena', contrasena);
 
       // Cargar habitaciones (si el controlador existe)
       if (Get.isRegistered<HabitacionesController>()) {
-        _habitacionesController = Get.find<HabitacionesController>();
-        await _habitacionesController.cargarHabitacionesUsuario();
+        await Get.find<HabitacionesController>().cargarHabitacionesUsuario();
       }
-
       Get.snackbar(
-        'Exito',
+        'Éxito',
         'Inicio de sesión exitoso',
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
+
+      isLoading.value = false;
       return true;
     } on FirebaseAuthException catch (e) {
+      isLoading.value = false;
       Get.snackbar(
         'Error',
         e.message ?? 'Error desconocido',
@@ -117,7 +78,7 @@ class UsuariosController extends GetxController {
       debugPrint('Login post-auth error: $e\n$s');
       Get.snackbar(
         'Error',
-        'Ocurrió un problema al continuar',
+        '$e Ocurrió un problema al continuar',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -151,10 +112,8 @@ class UsuariosController extends GetxController {
           .doc(cred.user!.uid)
           .set(nuevoUsuario.toMap());
 
-      // Opcional: precargar habitaciones (vacío)
       if (Get.isRegistered<HabitacionesController>()) {
-        _habitacionesController = Get.find<HabitacionesController>();
-        await _habitacionesController.cargarHabitacionesUsuario();
+        await Get.find<HabitacionesController>().cargarHabitacionesUsuario();
       }
 
       Get.snackbar(

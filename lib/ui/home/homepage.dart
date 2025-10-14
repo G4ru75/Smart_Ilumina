@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
+import 'package:smart_ilumina/controllers/luz_controller.dart';
 import 'package:smart_ilumina/ui/widgets/HabitacionesCard.dart';
 import 'package:smart_ilumina/ui/widgets/InfoCard.dart';
 import 'package:smart_ilumina/ui/widgets/Navbar.dart';
@@ -13,7 +13,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final HabitacionesController habitacionesController = Get.find();
+  final LucesController lucesController = Get.find();
 
   Widget _buildInfoCards() {
     return Padding(
@@ -27,14 +27,19 @@ class _HomePageState extends State<HomePage> {
             InfoCard(
               icono: Icons.lightbulb,
               titulo: 'Luces activas',
-              informacion: habitacionesController.cantidadLuces(),
+              informacion: lucesController.progreso,
               color: Colors.yellow[700]!,
             ),
-            InfoCard(
-              icono: Icons.access_time,
-              titulo: 'Horarios',
-              informacion: 'Gestionar\nhorarios',
-              color: Colors.grey[700]!,
+            GestureDetector(
+              onTap: () {
+                Get.toNamed('/horarios');
+              },
+              child: InfoCard(
+                icono: Icons.access_time,
+                titulo: 'Horarios',
+                informacion: 'Gestionar\nhorarios',
+                color: Colors.grey[700]!,
+              ),
             ),
             InfoCard(
               icono: Icons.flash_on,
