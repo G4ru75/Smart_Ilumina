@@ -35,17 +35,7 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final luz = lucesController.luces.firstWhere(
-        (l) => l.id == widget.luzId,
-        orElse: () => null as dynamic,
-      );
-
-      if (luz == null) {
-        return const Padding(
-          padding: EdgeInsets.all(24),
-          child: Center(child: CircularProgressIndicator()),
-        );
-      }
+      final luz = lucesController.luces.firstWhere((l) => l.id == widget.luzId);
 
       final titulo = 'Configurar: ${luz.nombre}';
       final colorActual = Color(luz.color.value);

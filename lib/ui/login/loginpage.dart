@@ -187,8 +187,7 @@ class _LoginPageState extends State<LoginPage> {
                                           txtEmail.text.trim(),
                                           txtContrasena.text.trim(),
                                         );
-                                    if (!mounted)
-                                      return; // Evita usar context si se desmontó
+                                    if (!mounted) return;
                                     if (ok) {
                                       Get.offAllNamed('/home');
                                       txtContrasena.clear();

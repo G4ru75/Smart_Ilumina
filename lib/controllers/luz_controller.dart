@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
-import 'package:smart_ilumina/models/habitaciones_models.dart';
 import 'package:smart_ilumina/models/luces_models.dart';
 import 'package:smart_ilumina/utils/lucesProgreso.dart';
 
@@ -22,11 +21,20 @@ class LucesController extends GetxController {
   final Map<String, Timer> _debouncers = {}; // por luzId para intensidad
   Timer? _scheduler; // verificador de hora encendido/apagado
 
+  final Map<String, DateTime> _ultimoHorarioAplicado = {};
+
+  @override
+  void onInit() {
+    _startScheduler();
+    super.onInit();
+  }
+
   @override
   void onClose() {
     _cancelStream();
     _stopScheduler();
     _cancelAllDebouncers();
+    _ultimoHorarioAplicado.clear();
     super.onClose();
   }
 
@@ -81,8 +89,13 @@ class LucesController extends GetxController {
 
   // Escuchar luces por idHabitacion
   Future<void> escucharLucesDeHabitacion(String idHabitacion) async {
-    await _cancelStream();
+    if (idHabitacion.isEmpty) {
+      luces.clear();
+      return;
+    }
+
     habitacionActualId.value = idHabitacion;
+    await _cancelStream();
 
     loading.value = true;
     _sub = _firestore
@@ -91,20 +104,19 @@ class LucesController extends GetxController {
         .snapshots()
         .listen(
           (snap) {
-            final lista = snap.docs
-                .where((d) => d.exists && d.data().isNotEmpty)
-                .map((d) => Luces.fromMap(d.data()))
-                .toList();
-
-            luces.assignAll(lista);
-            loading.value = false;
-
-            // (Re)inicia el scheduler cuando hay datos
-            _startScheduler();
+            try {
+              luces.assignAll(
+                snap.docs
+                    .where((d) => d.exists && d.data().isNotEmpty)
+                    .map((d) => Luces.fromMap(d.data()))
+                    .toList(),
+              );
+            } catch (e) {
+              error.value = e.toString();
+            }
           },
           onError: (e) {
             error.value = e.toString();
-            loading.value = false;
           },
         );
   }
@@ -118,7 +130,6 @@ class LucesController extends GetxController {
   // siguen las funciones de las modificaciones de las luces
 
   Future<void> cambiarEstadoLuz(String luzId, bool encendida) async {
-    // Optimista
     _setLocal(luzId, (l) => l.encendida = encendida);
     await _ActualizarLuz(luzId, {'encendida': encendida});
   }
@@ -145,16 +156,17 @@ class LucesController extends GetxController {
       final habitacionesController = Get.find<HabitacionesController>();
 
       if (habitacionesController.habitacionesList().isEmpty) {
-        return Stream.value([]);
+        return Stream.value(<Luces>[]);
       }
 
       final habitacionesIds = habitacionesController
           .habitacionesList()
           .map((h) => h.id)
+          .where((id) => id.isNotEmpty)
           .toList();
 
       if (habitacionesIds.isEmpty) {
-        return Stream.value([]);
+        return Stream.value(<Luces>[]);
       }
 
       return _firestore
@@ -170,7 +182,7 @@ class LucesController extends GetxController {
           );
     } catch (e) {
       Get.snackbar('Error', 'No se pudo obtener las luces vinculadas: $e');
-      return Stream.value([]);
+      return Stream.value(<Luces>[]);
     }
   }
 
@@ -225,11 +237,9 @@ class LucesController extends GetxController {
 
   void _startScheduler() {
     _scheduler?.cancel();
-    // No dispara si no hay luces escuchándose
-    if (habitacionActualId.value == null) return;
 
     _scheduler = Timer.periodic(
-      const Duration(seconds: 30),
+      const Duration(seconds: 10),
       (_) => _applySchedulesTick(),
     );
     _applySchedulesTick(); // primera corrida inmediata
@@ -241,50 +251,86 @@ class LucesController extends GetxController {
   }
 
   Future<void> _applySchedulesTick() async {
-    if (luces.isEmpty) return;
-    final now = DateTime.now();
+    try {
+      final habitacionesController = Get.find<HabitacionesController>();
+      final habitacionIds = habitacionesController.habitacionesList
+          .map((h) => h.id)
+          .where((id) => id.isNotEmpty)
+          .toList();
 
-    // Determina cambios y los aplica en lote
-    final List<MapEntry<String, bool>> cambios = [];
+      if (habitacionIds.isEmpty) return;
 
-    for (final l in luces) {
-      final encendido = l.horaEncendido;
-      final apagado = l.horaApagado;
-      if (encendido == null || apagado == null) continue;
+      final querySnapshot = await _firestore
+          .collection(nombreColeccion)
+          .where('idHabitacion', whereIn: habitacionIds)
+          .where('vinculada', isEqualTo: true)
+          .get();
 
-      final shouldBeOn = _isNowBetween(encendido, apagado, now);
-      if (l.encendida != shouldBeOn) {
-        // Actualiza local y programa update remoto
-        l.encendida = shouldBeOn;
-        cambios.add(MapEntry(l.id, shouldBeOn));
-      }
-    }
+      if (querySnapshot.docs.isEmpty) return;
 
-    if (cambios.isNotEmpty) {
-      luces.refresh();
+      final now = DateTime.now();
+      final horaActual = TimeOfDay.fromDateTime(now);
+
       final batch = _firestore.batch();
-      for (final c in cambios) {
-        final ref = _firestore.collection(nombreColeccion).doc(c.key);
-        batch.update(ref, {'encendida': c.value});
+      bool hayCambios = false;
+
+      for (final doc in querySnapshot.docs) {
+        final data = doc.data();
+        final luz = Luces.fromMap(data);
+        bool? nuevoEstado;
+
+        final encendido = luz.horaEncendido;
+        final apagado = luz.horaApagado;
+
+        if (encendido == null || apagado == null) continue;
+
+        final horaEncender = _horaExacta(horaActual, encendido);
+        final horaApagar = _horaExacta(horaActual, apagado);
+
+        final ultimaAplicacion =
+            _ultimoHorarioAplicado[luz
+                .id]; //Evita que se aplique el mismo horario más de una vez en el mismo minuto
+        if (ultimaAplicacion != null) {
+          final mismoMinuto =
+              ultimaAplicacion.year == now.year &&
+              ultimaAplicacion.month == now.month &&
+              ultimaAplicacion.day == now.day &&
+              ultimaAplicacion.hour == now.hour &&
+              ultimaAplicacion.minute == now.minute;
+
+          if (mismoMinuto) continue; // Ya se aplicó en este minuto, skip
+        }
+
+        if (horaEncender) {
+          nuevoEstado = true;
+        } else if (horaApagar) {
+          nuevoEstado = false;
+        }
+
+        if (nuevoEstado != null) {
+          batch.update(doc.reference, {'encendida': nuevoEstado});
+          _ultimoHorarioAplicado[luz.id] = now;
+          hayCambios = true;
+
+          _setLocal(luz.id, (l) => l.encendida = nuevoEstado!);
+        }
       }
-      await batch.commit();
+
+      if (hayCambios) {
+        await batch.commit();
+      }
+    } catch (e, stackTrace) {
+      print('Error en el scheduler: $e');
+      print('Stack trace: $stackTrace');
     }
   }
 
-  // Dentro de [on, off) con soporte a cruce de medianoche
-  bool _isNowBetween(TimeOfDay on, TimeOfDay off, DateTime now) {
-    final start = DateTime(now.year, now.month, now.day, on.hour, on.minute);
-    final end = DateTime(now.year, now.month, now.day, off.hour, off.minute);
+  // Con soporte a cruce de medianoche
+  bool _horaExacta(TimeOfDay actual, TimeOfDay programada) {
+    final actualMinutos = actual.hour * 60 + actual.minute;
+    final programadaMinutos = programada.hour * 60 + programada.minute;
 
-    if (!end.isBefore(start)) {
-      final afterStart = now.isAfter(start) || now.isAtSameMomentAs(start);
-      final beforeEnd = now.isBefore(end);
-      return afterStart && beforeEnd;
-    } else {
-      final afterStart = now.isAfter(start) || now.isAtSameMomentAs(start);
-      final beforeEnd = now.isBefore(end);
-      return afterStart || beforeEnd;
-    }
+    return actualMinutos == programadaMinutos;
   }
 
   Future<void> _ActualizarLuz(String luzId, Map<String, dynamic> data) async {

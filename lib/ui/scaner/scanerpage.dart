@@ -37,7 +37,7 @@ class _ScanerPageState extends State<ScanerPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Luz vinculada con éxito')),
         );
-        Navigator.of(context).maybePop(); //volver atrás tras éxito
+        Navigator.of(context).pop(); //volver atrás tras éxito
       }
     } finally {
       // Permitir nuevos escaneos si sigues en esta pantalla
