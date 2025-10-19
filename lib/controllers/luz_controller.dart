@@ -342,6 +342,67 @@ class LucesController extends GetxController {
     }
   }
 
+  /// Este es para la cantidad de luces del usuario encendidas encima del total de luces del usuario
+  Stream<LucesProgreso> progresoGlobalUsuario() {
+    try {
+      final habitacionesController = Get.find<HabitacionesController>();
+
+      // Si no hay habitaciones, devuelve 0/0
+      if (habitacionesController.habitacionesList.isEmpty) {
+        return Stream.value(const LucesProgreso(total: 0, encendidas: 0));
+      }
+
+      final habitacionIds = habitacionesController.habitacionesList
+          .map((h) => h.id)
+          .where((id) => id.isNotEmpty)
+          .toList();
+
+      if (habitacionIds.isEmpty) {
+        return Stream.value(const LucesProgreso(total: 0, encendidas: 0));
+      }
+
+      // Escucha todas las luces vinculadas del usuario
+      return _firestore
+          .collection(nombreColeccion)
+          .where('vinculada', isEqualTo: true)
+          .where('idHabitacion', whereIn: habitacionIds)
+          .snapshots()
+          .map((qs) {
+            final total = qs.docs.length;
+            final encendidas = qs.docs
+                .where((d) => (d.data()['encendida'] ?? false) == true)
+                .length;
+
+            return LucesProgreso(total: total, encendidas: encendidas);
+          });
+    } catch (e) {
+      error.value = 'Error al obtener progreso global: $e';
+      return Stream.value(const LucesProgreso(total: 0, encendidas: 0));
+    }
+  }
+
+  // Este se ayuda del utils de lucesProgreso para dar el progreso de las luces encendidas por habitacion
+  Stream<LucesProgreso> progresoPorHabitacionStream(String idHabitacion) {
+    if (idHabitacion.isEmpty) {
+      return Stream.value(const LucesProgreso(total: 0, encendidas: 0));
+    }
+
+    return _firestore
+        .collection(nombreColeccion)
+        .where('idHabitacion', isEqualTo: idHabitacion)
+        .snapshots()
+        .map((qs) {
+          final total = qs.docs.length;
+          final encendidas = qs.docs
+              .where((d) => (d.data()['encendida'] ?? false) == true)
+              .length;
+
+          return LucesProgreso(total: total, encendidas: encendidas);
+        });
+  }
+
+  // ...existing code...
+
   void _setLocal(String luzId, void Function(Luces l) set) {
     final idx = luces.indexWhere((l) => l.id == luzId);
     if (idx == -1) return;

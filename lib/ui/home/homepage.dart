@@ -4,6 +4,7 @@ import 'package:smart_ilumina/controllers/luz_controller.dart';
 import 'package:smart_ilumina/ui/widgets/HabitacionesCard.dart';
 import 'package:smart_ilumina/ui/widgets/InfoCard.dart';
 import 'package:smart_ilumina/ui/widgets/Navbar.dart';
+import 'package:smart_ilumina/utils/lucesProgreso.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -24,11 +25,41 @@ class _HomePageState extends State<HomePage> {
           runSpacing: 20,
           alignment: WrapAlignment.center,
           children: [
-            InfoCard(
-              icono: Icons.lightbulb,
-              titulo: 'Luces activas',
-              informacion: lucesController.progreso,
-              color: Colors.yellow[700]!,
+            StreamBuilder<LucesProgreso>(
+              stream: lucesController.progresoGlobalUsuario(),
+              builder: (context, snapshot) {
+                // Mientras carga
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return InfoCard(
+                    icono: Icons.lightbulb,
+                    titulo: 'Luces activas',
+                    informacion: '...',
+                    color: Colors.yellow[700]!,
+                  );
+                }
+
+                // Si hay error
+                if (snapshot.hasError) {
+                  return InfoCard(
+                    icono: Icons.lightbulb,
+                    titulo: 'Luces activas',
+                    informacion: '0/0',
+                    color: Colors.yellow[700]!,
+                  );
+                }
+
+                // Obtener el progreso
+                final progreso =
+                    snapshot.data ??
+                    const LucesProgreso(total: 0, encendidas: 0);
+
+                return InfoCard(
+                  icono: Icons.lightbulb,
+                  titulo: 'Luces activas',
+                  informacion: progreso.texto,
+                  color: Colors.yellow[700]!,
+                );
+              },
             ),
             GestureDetector(
               onTap: () {
