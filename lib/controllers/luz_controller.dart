@@ -9,6 +9,7 @@ import 'package:smart_ilumina/utils/lucesProgreso.dart';
 class LucesController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String nombreColeccion = 'luces';
+  final habitacionesController = Get.find<HabitacionesController>();
 
   // Estados
   final RxList<Luces> luces = <Luces>[].obs;
@@ -252,7 +253,6 @@ class LucesController extends GetxController {
 
   Future<void> _applySchedulesTick() async {
     try {
-      final habitacionesController = Get.find<HabitacionesController>();
       final habitacionIds = habitacionesController.habitacionesList
           .map((h) => h.id)
           .where((id) => id.isNotEmpty)
@@ -343,10 +343,9 @@ class LucesController extends GetxController {
   }
 
   /// Este es para la cantidad de luces del usuario encendidas encima del total de luces del usuario
+  /// tambien se ayuda del utils de lucesProgreso
   Stream<LucesProgreso> progresoGlobalUsuario() {
     try {
-      final habitacionesController = Get.find<HabitacionesController>();
-
       // Si no hay habitaciones, devuelve 0/0
       if (habitacionesController.habitacionesList.isEmpty) {
         return Stream.value(const LucesProgreso(total: 0, encendidas: 0));
@@ -416,9 +415,4 @@ class LucesController extends GetxController {
     }
     _debouncers.clear();
   }
-
-  int get totalLuces => luces.length;
-  int get lucesEncendidas => luces.where((l) => l.encendida).length;
-  String get progreso =>
-      totalLuces == 0 ? '0/0' : '$lucesEncendidas/$totalLuces';
 }
