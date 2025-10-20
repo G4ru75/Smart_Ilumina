@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:smart_ilumina/controllers/horarios_controller.dart';
 import 'package:smart_ilumina/controllers/luz_controller.dart';
 import 'package:smart_ilumina/models/luces_models.dart';
 import 'package:smart_ilumina/models/Horarios_models.dart';
 import 'package:smart_ilumina/ui/widgets/Navbar.dart';
+
+import '../../controllers/horarios_controller.dart';
 
 class HorariosPage extends StatefulWidget {
   const HorariosPage({super.key});
@@ -14,8 +15,550 @@ class HorariosPage extends StatefulWidget {
 }
 
 class _HorariosPageState extends State<HorariosPage> {
-  //final HorariosController horarioController = Get.find();
+  final HorariosController horarioController = Get.find();
   final LucesController lucesController = Get.find();
+
+  //Dialogo para aagregar el nuevo horario
+  void _mostrarDialogoNuevoHorario(String luzId) {
+    TimeOfDay? horaEncendido;
+    TimeOfDay? horaApagado;
+    List<int> diasSeleccionados = [1, 2, 3, 4, 5, 6, 7];
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Nuevo Horario'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Hora de encendido
+                const Text(
+                  'Hora de Encendido:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final hora = await showTimePicker(
+                      context: context,
+                      initialTime: horaEncendido ?? TimeOfDay.now(),
+                    );
+                    if (hora != null) {
+                      setDialogState(() => horaEncendido = hora);
+                    }
+                  },
+                  icon: const Icon(Icons.access_time),
+                  label: Text(
+                    horaEncendido != null
+                        ? _formatTimeOfDay(horaEncendido!)
+                        : 'Seleccionar hora',
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Hora de apagado
+                const Text(
+                  'Hora de Apagado:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final hora = await showTimePicker(
+                      context: context,
+                      initialTime: horaApagado ?? TimeOfDay.now(),
+                    );
+                    if (hora != null) {
+                      setDialogState(() => horaApagado = hora);
+                    }
+                  },
+                  icon: const Icon(Icons.access_time),
+                  label: Text(
+                    horaApagado != null
+                        ? _formatTimeOfDay(horaApagado!)
+                        : 'Seleccionar hora',
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Días de la semana
+                const Text(
+                  'Días de la semana:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    _buildDiaChip(
+                      'Lunes',
+                      1,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                    _buildDiaChip(
+                      'Martes',
+                      2,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                    _buildDiaChip(
+                      'Miércoles',
+                      3,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                    _buildDiaChip(
+                      'Jueves',
+                      4,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                    _buildDiaChip(
+                      'Viernes',
+                      5,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                    _buildDiaChip(
+                      'Sábado',
+                      6,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                    _buildDiaChip(
+                      'Domingo',
+                      7,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: horaEncendido != null && horaApagado != null
+                  ? () async {
+                      final nuevoHorario = Horarios(
+                        id: DateTime.now().millisecondsSinceEpoch.toString(),
+                        horaEncendido: horaEncendido!,
+                        horaApagado: horaApagado!,
+                        diasSemana: diasSeleccionados,
+                        activo: true,
+                      );
+
+                      await horarioController.agregarHorario(
+                        luzId,
+                        nuevoHorario,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    }
+                  : null,
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  //Modal para editar horario
+  void _mostrarDialogoEditarHorario(String luzId, Horarios horarioActual) {
+    TimeOfDay? horaEncendido = horarioActual.horaEncendido;
+    TimeOfDay? horaApagado = horarioActual.horaApagado;
+    List<int> diasSeleccionados = List.from(horarioActual.diasSemana);
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Editar Horario'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Hora de encendido
+                const Text(
+                  'Hora de Encendido:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final hora = await showTimePicker(
+                      context: context,
+                      initialTime: horaEncendido ?? TimeOfDay.now(),
+                    );
+                    if (hora != null) {
+                      setDialogState(() => horaEncendido = hora);
+                    }
+                  },
+                  icon: const Icon(Icons.access_time),
+                  label: Text(
+                    horaEncendido != null
+                        ? _formatTimeOfDay(horaEncendido!)
+                        : 'Seleccionar hora',
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Hora de apagado
+                const Text(
+                  'Hora de Apagado:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final hora = await showTimePicker(
+                      context: context,
+                      initialTime: horaApagado ?? TimeOfDay.now(),
+                    );
+                    if (hora != null) {
+                      setDialogState(() => horaApagado = hora);
+                    }
+                  },
+                  icon: const Icon(Icons.access_time),
+                  label: Text(
+                    horaApagado != null
+                        ? _formatTimeOfDay(horaApagado!)
+                        : 'Seleccionar hora',
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Días de la semana
+                const Text(
+                  'Días de la semana:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    _buildDiaChip(
+                      'Lunes',
+                      1,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                    _buildDiaChip(
+                      'Martes',
+                      2,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                    _buildDiaChip(
+                      'Miércoles',
+                      3,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                    _buildDiaChip(
+                      'Jueves',
+                      4,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                    _buildDiaChip(
+                      'Viernes',
+                      5,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                    _buildDiaChip(
+                      'Sábado',
+                      6,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                    _buildDiaChip(
+                      'Domingo',
+                      7,
+                      diasSeleccionados,
+                      setDialogState,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: horaEncendido != null && horaApagado != null
+                  ? () async {
+                      final horarioEditado = Horarios(
+                        id: horarioActual.id, // **Mantener el mismo ID**
+                        horaEncendido: horaEncendido!,
+                        horaApagado: horaApagado!,
+                        diasSemana: diasSeleccionados,
+                        activo:
+                            horarioActual.activo, // **Mantener estado activo**
+                      );
+
+                      await horarioController.editarHorario(
+                        luzId,
+                        horarioEditado,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Guardar cambios'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  //Muestra la informacion de cada horario en un card
+  Widget _buildHorarioCard(String luzId, Horarios horario) {
+    return GestureDetector(
+      onTap: () => _mostrarDialogoEditarHorario(
+        luzId,
+        horario,
+      ), // Click en el card abre el modal de editar
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: horario.activo ? Colors.blue.shade50 : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: horario.activo ? Colors.blue.shade200 : Colors.grey.shade300,
+          ),
+        ),
+        child: Column(
+          children: [
+            // Contenido principal del card
+            Row(
+              children: [
+                // Icono de estado
+                Icon(
+                  horario.activo ? Icons.alarm_on : Icons.alarm_off,
+                  color: horario.activo
+                      ? Colors.blue.shade700
+                      : Colors.grey.shade600,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+
+                // Horarios
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.wb_sunny,
+                            size: 16,
+                            color: Colors.orange.shade700,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _formatTimeOfDay(horario.horaEncendido),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Icon(
+                            Icons.nightlight,
+                            size: 16,
+                            color: Colors.indigo.shade700,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _formatTimeOfDay(horario.horaApagado),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatDiasSemana(horario.diasSemana),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+            const SizedBox(height: 8),
+
+            Row(
+              children: [
+                // Switch activar/desactivar
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        horario.activo ? Icons.check_circle : Icons.cancel,
+                        size: 16,
+                        color: horario.activo ? Colors.green : Colors.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        horario.activo ? 'Activo' : 'Inactivo',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: horario.activo
+                              ? Colors.green.shade700
+                              : Colors.grey.shade600,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Switch(
+                        value: horario.activo,
+                        onChanged: (value) async {
+                          await horarioController.toggleHorario(
+                            luzId,
+                            horario.id,
+                            value,
+                          );
+                        },
+                        activeColor: Colors.blue.shade700,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Botón eliminar
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  color: Colors.red.shade600,
+                  onPressed: () {
+                    // Prevenir propagación del tap al card
+                    _confirmarEliminarHorario(luzId, horario.id);
+                  },
+                  tooltip: 'Eliminar horario',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  //Alerta para confirmar el eliminar horario
+  void _confirmarEliminarHorario(String luzId, String horarioId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Horario'),
+        content: const Text('¿Está seguro de eliminar este horario?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await horarioController.eliminarHorario(luzId, horarioId);
+              if (context.mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Chip para seleccionar día
+  Widget _buildDiaChip(
+    String label,
+    int dia,
+    List<int> diasSeleccionados,
+    StateSetter setDialogState,
+  ) {
+    final selected = diasSeleccionados.contains(dia);
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (value) {
+        setDialogState(() {
+          if (value) {
+            diasSeleccionados.add(dia);
+          } else {
+            diasSeleccionados.remove(dia);
+          }
+        });
+      },
+    );
+  }
+
+  //Formatear TimeOfDay
+  String _formatTimeOfDay(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  //Formatear días de la semana
+  String _formatDiasSemana(List<int> dias) {
+    if (dias.length == 7) return 'Todos los días';
+    if (dias.length == 5 &&
+        dias.contains(1) &&
+        dias.contains(2) &&
+        dias.contains(3) &&
+        dias.contains(4) &&
+        dias.contains(5)) {
+      return 'Lunes a Viernes';
+    }
+    if (dias.length == 2 && dias.contains(6) && dias.contains(7)) {
+      return 'Fines de semana';
+    }
+
+    const nombres = [
+      'Lunes',
+      'Martes',
+      'Miércoles',
+      'Jueves',
+      'Viernes',
+      'Sábado',
+      'Domingo',
+    ];
+    return dias.map((d) => nombres[d - 1]).join(', ');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -166,7 +709,7 @@ class _HorariosPageState extends State<HorariosPage> {
                                 ),
                                 const SizedBox(height: 16),
 
-                                // **NUEVO: Lista de horarios configurados**
+                                // Lista de horarios configurados
                                 if (luz.horarios.isEmpty)
                                   Container(
                                     padding: const EdgeInsets.all(12),
@@ -217,7 +760,7 @@ class _HorariosPageState extends State<HorariosPage> {
 
                                 const SizedBox(height: 12),
 
-                                // **Botón para agregar nuevo horario**
+                                // Botón para agregar nuevo horario
                                 SizedBox(
                                   width: double.infinity,
                                   child: OutlinedButton.icon(
@@ -236,7 +779,7 @@ class _HorariosPageState extends State<HorariosPage> {
 
                                 const SizedBox(height: 8),
 
-                                // **Botones de acción rápida**
+                                // Botones de acción rápida
                                 Row(
                                   children: [
                                     Expanded(
@@ -285,329 +828,5 @@ class _HorariosPageState extends State<HorariosPage> {
         ),
       ),
     );
-  }
-
-  // **NUEVO: Widget para cada horario**
-  Widget _buildHorarioCard(String luzId, Horarios horario) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: horario.activo ? Colors.blue.shade50 : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: horario.activo ? Colors.blue.shade200 : Colors.grey.shade300,
-        ),
-      ),
-      child: Row(
-        children: [
-          // Icono de estado
-          Icon(
-            horario.activo ? Icons.alarm_on : Icons.alarm_off,
-            color: horario.activo ? Colors.blue.shade700 : Colors.grey.shade600,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-
-          // Horarios
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.wb_sunny,
-                      size: 16,
-                      color: Colors.orange.shade700,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _formatTimeOfDay(horario.horaEncendido),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Icon(
-                      Icons.nightlight,
-                      size: 16,
-                      color: Colors.indigo.shade700,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _formatTimeOfDay(horario.horaApagado),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatDiasSemana(horario.diasSemana),
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                ),
-              ],
-            ),
-          ),
-
-          // Switch activar/desactivar
-          Switch(
-            value: horario.activo,
-            onChanged: (value) async {
-              await lucesController.toggleHorarios(luzId, horario.id, value);
-            },
-            activeColor: Colors.blue.shade700,
-          ),
-
-          // Botón eliminar
-          IconButton(
-            icon: const Icon(Icons.delete_outline, size: 20),
-            color: Colors.red.shade600,
-            onPressed: () => _confirmarEliminarHorario(luzId, horario.id),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // **NUEVO: Diálogo para agregar horario**
-  void _mostrarDialogoNuevoHorario(String luzId) {
-    TimeOfDay? horaEncendido;
-    TimeOfDay? horaApagado;
-    List<int> diasSeleccionados = [1, 2, 3, 4, 5, 6, 7];
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Nuevo Horario'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Hora de encendido
-                const Text(
-                  'Hora de Encendido:',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final hora = await showTimePicker(
-                      context: context,
-                      initialTime: horaEncendido ?? TimeOfDay.now(),
-                    );
-                    if (hora != null) {
-                      setDialogState(() => horaEncendido = hora);
-                    }
-                  },
-                  icon: const Icon(Icons.access_time),
-                  label: Text(
-                    horaEncendido != null
-                        ? _formatTimeOfDay(horaEncendido!)
-                        : 'Seleccionar hora',
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Hora de apagado
-                const Text(
-                  'Hora de Apagado:',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final hora = await showTimePicker(
-                      context: context,
-                      initialTime: horaApagado ?? TimeOfDay.now(),
-                    );
-                    if (hora != null) {
-                      setDialogState(() => horaApagado = hora);
-                    }
-                  },
-                  icon: const Icon(Icons.access_time),
-                  label: Text(
-                    horaApagado != null
-                        ? _formatTimeOfDay(horaApagado!)
-                        : 'Seleccionar hora',
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Días de la semana
-                const Text(
-                  'Días de la semana:',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    _buildDiaChip(
-                      'Lunes',
-                      1,
-                      diasSeleccionados,
-                      setDialogState,
-                    ),
-                    _buildDiaChip(
-                      'Martes',
-                      2,
-                      diasSeleccionados,
-                      setDialogState,
-                    ),
-                    _buildDiaChip(
-                      'Miércoles',
-                      3,
-                      diasSeleccionados,
-                      setDialogState,
-                    ),
-                    _buildDiaChip(
-                      'Jueves',
-                      4,
-                      diasSeleccionados,
-                      setDialogState,
-                    ),
-                    _buildDiaChip(
-                      'Viernes',
-                      5,
-                      diasSeleccionados,
-                      setDialogState,
-                    ),
-                    _buildDiaChip(
-                      'Sábado',
-                      6,
-                      diasSeleccionados,
-                      setDialogState,
-                    ),
-                    _buildDiaChip(
-                      'Domingo',
-                      7,
-                      diasSeleccionados,
-                      setDialogState,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: horaEncendido != null && horaApagado != null
-                  ? () async {
-                      final nuevoHorario = Horarios(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        horaEncendido: horaEncendido!,
-                        horaApagado: horaApagado!,
-                        diasSemana: diasSeleccionados,
-                        activo: true,
-                      );
-
-                      await lucesController.agregarHorario(luzId, nuevoHorario);
-                      if (context.mounted) Navigator.pop(context);
-                    }
-                  : null,
-              child: const Text('Guardar'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // **NUEVO: Chip para seleccionar día**
-  Widget _buildDiaChip(
-    String label,
-    int dia,
-    List<int> diasSeleccionados,
-    StateSetter setDialogState,
-  ) {
-    final selected = diasSeleccionados.contains(dia);
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (value) {
-        setDialogState(() {
-          if (value) {
-            diasSeleccionados.add(dia);
-          } else {
-            diasSeleccionados.remove(dia);
-          }
-        });
-      },
-    );
-  }
-
-  // **NUEVO: Confirmar eliminación**
-  void _confirmarEliminarHorario(String luzId, String horarioId) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar Horario'),
-        content: const Text('¿Está seguro de eliminar este horario?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              //await habitacionesController.eliminarHorario(luzId, horarioId);
-              if (context.mounted) Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // **NUEVO: Formatear TimeOfDay**
-  String _formatTimeOfDay(TimeOfDay time) {
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
-
-  // **NUEVO: Formatear días de la semana**
-  String _formatDiasSemana(List<int> dias) {
-    if (dias.length == 7) return 'Todos los días';
-    if (dias.length == 5 &&
-        dias.contains(1) &&
-        dias.contains(2) &&
-        dias.contains(3) &&
-        dias.contains(4) &&
-        dias.contains(5)) {
-      return 'Lunes a Viernes';
-    }
-    if (dias.length == 2 && dias.contains(6) && dias.contains(7)) {
-      return 'Fines de semana';
-    }
-
-    const nombres = [
-      'Lunes',
-      'Martes',
-      'Miércoles',
-      'Jueves',
-      'Viernes',
-      'Sábado',
-      'Domingo',
-    ];
-    return dias.map((d) => nombres[d - 1]).join(', ');
   }
 }
