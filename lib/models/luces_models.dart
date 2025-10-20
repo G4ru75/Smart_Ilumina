@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:smart_ilumina/models/Horarios_models.dart';
+import 'package:smart_ilumina/models/ciclos_models.dart';
 
 class Luces {
   String id;
@@ -8,8 +10,8 @@ class Luces {
   Color color;
   String idHabitacion;
   bool vinculada;
-  TimeOfDay? horaEncendido;
-  TimeOfDay? horaApagado;
+  final List<Horarios> horarios;
+  final Ciclos? ciclos;
 
   Luces({
     String? id,
@@ -19,8 +21,8 @@ class Luces {
     this.color = Colors.white,
     this.idHabitacion = '',
     this.vinculada = false,
-    this.horaEncendido,
-    this.horaApagado,
+    this.horarios = const [],
+    this.ciclos,
   }) : id = id ?? UniqueKey().toString();
 
   Map<String, dynamic> toMap() {
@@ -32,35 +34,24 @@ class Luces {
       'color': color.value,
       'idHabitacion': idHabitacion,
       'vinculada': vinculada,
-      'horaEncendido': horaEncendido != null
-          ? {'hora': horaEncendido!.hour, 'minuto': horaEncendido!.minute}
-          : null,
-      'horaApagado': horaApagado != null
-          ? {'hora': horaApagado!.hour, 'minuto': horaApagado!.minute}
-          : null,
+      'horarios': horarios.map((h) => h.toMap()).toList(),
+      'ciclos': ciclos?.toMap(),
     };
   }
 
   factory Luces.fromMap(Map<String, dynamic> map) {
-    TimeOfDay? _parseTime(dynamic tiempo) {
-      if (tiempo == null) return null;
-      if (tiempo is Map) {
-        final hora = tiempo['hora'] as int?;
-        final minuto = tiempo['minuto'] as int?;
-        if (hora != null && minuto != null) {
-          return TimeOfDay(hour: hora, minute: minuto);
-        }
-      }
-      if (tiempo is String) {
-        final partes = tiempo.split(':');
-        if (partes.length == 2) {
-          final hora = int.tryParse(partes[0]);
-          final minuto = int.tryParse(partes[1]);
-          if (hora != null && minuto != null) {
-            return TimeOfDay(hour: hora, minute: minuto);
-          }
-        }
-      }
+    //Parcear horarios
+    List<Horarios> horariosList = [];
+    if (map['horarios'] != null && map['horarios'] is List) {
+      horariosList = (map['horarios'] as List)
+          .map((h) => Horarios.fromMap(h as Map<String, dynamic>))
+          .toList();
+    }
+
+    //Parcear ciclos
+    Ciclos? ciclosData;
+    if (map['ciclos'] != null && map['ciclos'] is Map) {
+      ciclosData = Ciclos.fromMap(map['ciclos'] as Map<String, dynamic>);
     }
 
     return Luces(
@@ -71,8 +62,8 @@ class Luces {
       color: Color(map['color'] ?? Colors.white.value),
       idHabitacion: map['idHabitacion'] ?? '',
       vinculada: map['vinculada'] ?? false,
-      horaEncendido: _parseTime(map['horaEncendido']),
-      horaApagado: _parseTime(map['horaApagado']),
+      horarios: horariosList,
+      ciclos: ciclosData,
     );
   }
 }

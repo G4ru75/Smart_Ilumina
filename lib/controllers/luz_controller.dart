@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
+import 'package:smart_ilumina/models/Horarios_models.dart';
+import 'package:smart_ilumina/models/ciclos_models.dart';
 import 'package:smart_ilumina/models/luces_models.dart';
 import 'package:smart_ilumina/utils/lucesProgreso.dart';
 
@@ -37,6 +39,115 @@ class LucesController extends GetxController {
     _cancelAllDebouncers();
     _ultimoHorarioAplicado.clear();
     super.onClose();
+  }
+
+  Future<void> agregarHorario(String luzId, Horarios horario) async {
+    try {
+      final luz = luces.firstWhereOrNull((l) => l.id == luzId);
+
+      if (luz == null) return;
+
+      final nuevosHorarios = [...luz.horarios, horario];
+
+      await _firestore.collection(nombreColeccion).doc(luzId).update({
+        'horarios': nuevosHorarios.map((h) => h.toMap()).toList(),
+      });
+
+      Get.snackbar(
+        'Horario agregado',
+        'Horario agregado correctamente',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Ops, ha ocurrido un error: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  //Sirve ara activar o desactivar un horario
+  Future<void> toggleHorarios(
+    String luzId,
+    String horarioId,
+    bool activo,
+  ) async {
+    try {
+      final luz = luces.firstWhereOrNull((l) => l.id == luzId);
+      if (luz == null) return;
+
+      final nuevosHorarios = luz.horarios.map((h) {
+        if (h.id == horarioId) {
+          return Horarios(
+            id: h.id,
+            horaEncendido: h.horaEncendido,
+            horaApagado: h.horaApagado,
+            diasSemana: h.diasSemana,
+            activo: activo,
+          );
+        }
+
+        return h;
+      }).toList();
+
+      await _firestore.collection(nombreColeccion).doc(luzId).update({
+        'horarios': nuevosHorarios.map((h) => h.toMap()).toList(),
+      });
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Ops, ha ocurrido un error: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  Future<void> configurarCiclos(String luzId, Ciclos ciclos) async {
+    try {
+      await _firestore.collection(nombreColeccion).doc(luzId).update({
+        'ciclos': ciclos.toMap(),
+      });
+
+      Get.snackbar(
+        'Ciclos configurados',
+        'Los ciclos han sido configurados correctamente',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Ops, ha ocurrido un error: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  Future<void> eliminarCiclos(String luzId) async {
+    try {
+      await _firestore.collection(nombreColeccion).doc(luzId).update({
+        'ciclos': null,
+      });
+
+      Get.snackbar(
+        'Ciclos eliminados',
+        'Los ciclos han sido eliminados correctamente',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Ops, ha ocurrido un error: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 
   Stream<List<Luces>> lucesStreamDeHabitacion(String habitacionId) {
@@ -186,7 +297,7 @@ class LucesController extends GetxController {
       return Stream.value(<Luces>[]);
     }
   }
-
+  /*
   Future<void> cambiarHoras(
     String luzId, {
     TimeOfDay? horaEncendido,
@@ -210,7 +321,7 @@ class LucesController extends GetxController {
     if (data.isNotEmpty) {
       await _ActualizarLuz(luzId, data);
     }
-  }
+  }*/
 
   // Encender o apagar todas en la habitación actual
   Future<void> cambiarEstadoTodas(bool encendida) async {
@@ -235,7 +346,6 @@ class LucesController extends GetxController {
   }
 
   //Para la hora, revisa la hora y si debe encender una luz o no
-
   void _startScheduler() {
     _scheduler?.cancel();
 
@@ -270,6 +380,7 @@ class LucesController extends GetxController {
 
       final now = DateTime.now();
       final horaActual = TimeOfDay.fromDateTime(now);
+      final diaActual = now.weekday; // 1=Lunes, 7=Domingo
 
       final batch = _firestore.batch();
       bool hayCambios = false;
@@ -279,40 +390,48 @@ class LucesController extends GetxController {
         final luz = Luces.fromMap(data);
         bool? nuevoEstado;
 
-        final encendido = luz.horaEncendido;
-        final apagado = luz.horaApagado;
+        for (final horario in luz.horarios) {
+          if (!horario.activo) continue;
+          if (!horario.diasSemana.contains(diaActual)) continue;
 
-        if (encendido == null || apagado == null) continue;
+          final cacheKey = '${luz.id}-${horario.id}';
+          final ultimaAplicacion = _ultimoHorarioAplicado[cacheKey];
 
-        final horaEncender = _horaExacta(horaActual, encendido);
-        final horaApagar = _horaExacta(horaActual, apagado);
+          if (ultimaAplicacion != null) {
+            final mismoMinuto =
+                ultimaAplicacion.year == now.year &&
+                ultimaAplicacion.month == now.month &&
+                ultimaAplicacion.day == now.day &&
+                ultimaAplicacion.hour == now.hour &&
+                ultimaAplicacion.minute == now.minute;
 
-        final ultimaAplicacion =
-            _ultimoHorarioAplicado[luz
-                .id]; //Evita que se aplique el mismo horario más de una vez en el mismo minuto
-        if (ultimaAplicacion != null) {
-          final mismoMinuto =
-              ultimaAplicacion.year == now.year &&
-              ultimaAplicacion.month == now.month &&
-              ultimaAplicacion.day == now.day &&
-              ultimaAplicacion.hour == now.hour &&
-              ultimaAplicacion.minute == now.minute;
+            if (mismoMinuto) continue;
+          }
 
-          if (mismoMinuto) continue; // Ya se aplicó en este minuto, skip
+          final encender = _horaExacta(horaActual, horario.horaEncendido);
+          final apagar = _horaExacta(horaActual, horario.horaApagado);
+
+          bool? nuevoEstado;
+
+          if (encender) {
+            nuevoEstado = true;
+          } else if (apagar) {
+            nuevoEstado = false;
+          }
+
+          if (nuevoEstado != null) {
+            batch.update(doc.reference, {'encendida': nuevoEstado});
+            _ultimoHorarioAplicado[cacheKey] = now;
+            hayCambios = true;
+
+            _setLocal(luz.id, (l) => l.encendida = nuevoEstado!);
+            break; // Asegura de que solo sea una ver por ciclo
+          }
         }
 
-        if (horaEncender) {
-          nuevoEstado = true;
-        } else if (horaApagar) {
-          nuevoEstado = false;
-        }
-
-        if (nuevoEstado != null) {
-          batch.update(doc.reference, {'encendida': nuevoEstado});
-          _ultimoHorarioAplicado[luz.id] = now;
+        if (luz.ciclos != null && luz.ciclos!.activo) {
+          await _aplicarCiclo(luz, batch);
           hayCambios = true;
-
-          _setLocal(luz.id, (l) => l.encendida = nuevoEstado!);
         }
       }
 
@@ -324,6 +443,8 @@ class LucesController extends GetxController {
       print('Stack trace: $stackTrace');
     }
   }
+
+  Future<void> _aplicarCiclo(Luces luz, WriteBatch batch) async {}
 
   // Con soporte a cruce de medianoche
   bool _horaExacta(TimeOfDay actual, TimeOfDay programada) {

@@ -157,29 +157,6 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
               ],
             ),
 
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: HoraInputField(
-                    titulo: 'Hora de Encendido',
-                    value: luz.horaEncendido,
-                    onChanged: (v) =>
-                        lucesController.cambiarHoras(luz.id, horaEncendido: v),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: HoraInputField(
-                    titulo: 'Hora de Apagado',
-                    value: luz.horaApagado,
-                    onChanged: (v) =>
-                        lucesController.cambiarHoras(luz.id, horaApagado: v),
-                  ),
-                ),
-              ],
-            ),
-
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
