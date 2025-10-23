@@ -7,14 +7,16 @@ import 'package:smart_ilumina/ui/login/registerpage.dart';
 import 'package:smart_ilumina/ui/scaner/scanerpage.dart';
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String initialRoute;
+
+  const MyApp({super.key, this.initialRoute = '/login'});
 
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Smart Ilumina',
-      initialRoute: '/login',
+      initialRoute: initialRoute,
       defaultTransition: Transition.fade,
       getPages: [
         GetPage(

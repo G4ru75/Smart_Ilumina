@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:smart_ilumina/controllers/usuarios_controller.dart';
 import 'package:smart_ilumina/ui/scaner/scanerpage.dart';
+import 'package:smart_ilumina/ui/widgets/user_panel.dart';
 import 'textos.dart';
 
 class Navbar extends StatelessWidget {
@@ -7,6 +10,8 @@ class Navbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final UsuariosController usuariosController = Get.find();
+
     return Container(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: Colors.black, width: 1)),
@@ -40,6 +45,28 @@ class Navbar extends StatelessWidget {
                 }
               },
               icon: Icon(Icons.qr_code, size: 28, color: Colors.black54),
+              tooltip: 'Escanear QR',
+            ),
+            // Botón de usuario que abre el panel
+            IconButton(
+              onPressed: () async {
+                // Siempre recargar los datos del usuario al abrir el panel
+                await usuariosController.getUserData();
+
+                if (context.mounted) {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => const UserPanel(),
+                  );
+                }
+              },
+              icon: CircleAvatar(
+                backgroundColor: Colors.blue[100],
+                child: Icon(Icons.person, color: Colors.blue[700], size: 24),
+              ),
+              tooltip: 'Mi perfil',
             ),
           ],
         ),
