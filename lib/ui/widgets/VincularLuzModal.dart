@@ -82,7 +82,7 @@ class _VincularLuzModalState extends State<VincularLuzModal> {
               else
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
-                    labelText: 'Seleccione habitación (Select room)',
+                    labelText: 'Seleccione habitación',
                     border: OutlineInputBorder(),
                   ),
                   value: _habitacionIdSeleccionada,
@@ -124,11 +124,21 @@ class _VincularLuzModalState extends State<VincularLuzModal> {
                                   luzId: luzId,
                                   habitacionId: _habitacionIdSeleccionada!,
                                 );
-                                if (mounted) Navigator.pop(context, true);
+                                if (mounted) {
+                                  Navigator.pop(context, true);
+                                  Get.snackbar(
+                                    'Vincular luz',
+                                    'Luz vinculada correctamente',
+                                    backgroundColor: Colors.green,
+                                    colorText: Colors.white,
+                                  );
+                                }
                               } catch (e) {
                                 Get.snackbar(
                                   'Vincular luz',
                                   'No se pudo vincular: $e',
+                                  backgroundColor: Colors.red,
+                                  colorText: Colors.white,
                                 );
                               } finally {
                                 if (mounted) setState(() => _saving = false);

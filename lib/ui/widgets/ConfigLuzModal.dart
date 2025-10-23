@@ -35,17 +35,7 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final luz = lucesController.luces.firstWhere(
-        (l) => l.id == widget.luzId,
-        orElse: () => null as dynamic,
-      );
-
-      if (luz == null) {
-        return const Padding(
-          padding: EdgeInsets.all(24),
-          child: Center(child: CircularProgressIndicator()),
-        );
-      }
+      final luz = lucesController.luces.firstWhere((l) => l.id == widget.luzId);
 
       final titulo = 'Configurar: ${luz.nombre}';
       final colorActual = Color(luz.color.value);
@@ -162,29 +152,6 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                     value: luz.intensidad,
                     onChanged: (v) =>
                         lucesController.cambiarIntensidadDebounced(luz.id, v),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: HoraInputField(
-                    titulo: 'Hora de Encendido',
-                    value: luz.horaEncendido,
-                    onChanged: (v) =>
-                        lucesController.cambiarHoras(luz.id, horaEncendido: v),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: HoraInputField(
-                    titulo: 'Hora de Apagado',
-                    value: luz.horaApagado,
-                    onChanged: (v) =>
-                        lucesController.cambiarHoras(luz.id, horaApagado: v),
                   ),
                 ),
               ],
