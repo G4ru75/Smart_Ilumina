@@ -190,7 +190,7 @@ class UserPanel extends StatelessWidget {
     dynamic usuario,
   ) {
     final nombreController = TextEditingController(text: usuario?.nombre ?? '');
-    DateTime selectedDate = usuario?.fechaNacimiento ?? DateTime.now();
+    final emailController = TextEditingController(text: usuario?.email ?? '');
 
     showDialog(
       context: context,
@@ -211,25 +211,16 @@ class UserPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              ListTile(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.grey[400]!),
+              TextField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Correo electrónico',
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                leading: const Icon(Icons.calendar_today),
-                title: const Text('Fecha de nacimiento'),
-                subtitle: Text(DateFormat('dd/MM/yyyy').format(selectedDate)),
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: selectedDate,
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime.now(),
-                  );
-                  if (picked != null) {
-                    selectedDate = picked;
-                  }
-                },
               ),
             ],
           ),
@@ -241,6 +232,7 @@ class UserPanel extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
+              // Validar nombre
               if (nombreController.text.trim().isEmpty) {
                 Get.snackbar(
                   'Error',
@@ -251,10 +243,34 @@ class UserPanel extends StatelessWidget {
                 return;
               }
 
+              // Validar email
+              final email = emailController.text.trim();
+              if (email.isEmpty) {
+                Get.snackbar(
+                  'Error',
+                  'El correo electrónico no puede estar vacío',
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
+                return;
+              }
+
+              // Validar formato de email
+              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+              if (!emailRegex.hasMatch(email)) {
+                Get.snackbar(
+                  'Error',
+                  'El formato del correo electrónico no es válido',
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
+                return;
+              }
+
               Navigator.pop(context);
               await controller.updateUserData(
                 nombre: nombreController.text.trim(),
-                fechaNacimiento: selectedDate,
+                email: email,
               );
             },
             style: ElevatedButton.styleFrom(

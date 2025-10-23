@@ -28,6 +28,7 @@ void main() async {
   final usuariosController = Get.put(UsuariosController());
   Get.put(HabitacionesController());
   Get.put(LucesController());
+  Get.put(HorariosController());
 
   // Verificar si hay sesión guardada y hacer auto-login
   bool hasActiveSession = false;
