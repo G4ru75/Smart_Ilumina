@@ -199,9 +199,6 @@ class _LucesHabitacionModalState extends State<LucesHabitacionModal> {
                                                   child: ConfigLuzModal(
                                                     habitacionId: habitacion.id,
                                                     luzId: luz.id,
-                                                    onSaved: () {
-                                                      // UI ya reactiva por stream
-                                                    },
                                                   ),
                                                 ),
                                               ),

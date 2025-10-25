@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/luz_controller.dart';
-import 'package:smart_ilumina/ui/widgets/textos.dart';
 import 'ArcoIntensidad.dart';
 
 class ConfigLuzModal extends StatefulWidget {
@@ -32,10 +31,50 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
     }
   }
 
+  //Alerta para confirmar el desvincular luz
+  void _confirmardesvincularLuz(String luzId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Desvincular luz'),
+        content: const Text('¿Está seguro de desvincular esta luz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await lucesController.deshabilitarLuz(luzId);
+              Get.back();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final luz = lucesController.luces.firstWhere((l) => l.id == widget.luzId);
+      final luz = lucesController.luces.firstWhereOrNull(
+        (l) => l.id == widget.luzId,
+      );
+
+      if (luz == null) {
+        return const SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [CircularProgressIndicator()],
+          ),
+        );
+      }
 
       final titulo = 'Configurar: ${luz.nombre}';
       final colorActual = Color(luz.color.value);
@@ -71,7 +110,16 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 48),
+
+                IconButton(
+                  onPressed: () {
+                    _confirmardesvincularLuz(luz.id);
+                  },
+                  icon: Icon(Icons.exit_to_app),
+                  color: Colors.red,
+                  tooltip: 'Desvincular luz',
+                ),
+                //const SizedBox(width: 48),
               ],
             ),
             const SizedBox(height: 8),
@@ -114,6 +162,7 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                   activeTrackColor: colorActual,
                   onChanged: (v) => lucesController.cambiarEstadoLuz(luz.id, v),
                 ),
+                const SizedBox(width: 8),
               ],
             ),
 

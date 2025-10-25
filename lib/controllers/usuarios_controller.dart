@@ -14,6 +14,8 @@ class UsuariosController extends GetxController {
   final storage = GetStorage();
   final AuthStorage _authStorage = AuthStorage();
 
+  final String usuariosColeccion = 'usuarios';
+
   final Rxn<Usuario> usuario = Rxn<Usuario>();
   var isLoading = false.obs;
   var isCheckingSession = false.obs; // Para el splash inicial
@@ -21,7 +23,6 @@ class UsuariosController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // El auto-login ahora se maneja desde main.dart antes de runApp
   }
 
   Future<bool> autoLogin() async {
@@ -135,7 +136,7 @@ class UsuariosController extends GetxController {
       );
 
       await _firestore
-          .collection('usuarios')
+          .collection(usuariosColeccion)
           .doc(cred.user!.uid)
           .set(nuevoUsuario.toMap());
 
@@ -199,7 +200,7 @@ class UsuariosController extends GetxController {
   Future<void> cargarDatosUsuario(String uid) async {
     try {
       debugPrint('🔍 Cargando datos del usuario con UID: $uid');
-      final doc = await _firestore.collection('usuarios').doc(uid).get();
+      final doc = await _firestore.collection(usuariosColeccion).doc(uid).get();
       if (doc.exists) {
         debugPrint('✅ Documento encontrado: ${doc.data()}');
         usuario.value = Usuario.fromMap(doc.data()!);
@@ -242,7 +243,7 @@ class UsuariosController extends GetxController {
 
       if (updates.isNotEmpty) {
         await _firestore
-            .collection('usuarios')
+            .collection(usuariosColeccion)
             .doc(currentUser.uid)
             .update(updates);
 
