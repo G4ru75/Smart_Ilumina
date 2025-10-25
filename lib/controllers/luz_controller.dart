@@ -232,6 +232,25 @@ class LucesController extends GetxController {
     }
   }
 
+  Future<void> deshabilitarLuz(String luzId) async {
+    try {
+      await _firestore.collection(nombreColeccion).doc(luzId).update({
+        'idHabitacion': null,
+        'vinculada': false,
+      });
+
+      final idx = luces.indexWhere((l) => l.id == luzId);
+      if (idx != -1) {
+        luces[idx].idHabitacion = '';
+        luces[idx].vinculada = false;
+        luces.refresh();
+      }
+    } catch (e) {
+      error.value = e.toString();
+      rethrow;
+    }
+  }
+
   // Encender o apagar todas en la habitación actual
   Future<void> cambiarEstadoTodas(bool encendida) async {
     final idHab = habitacionActualId.value;
