@@ -1,307 +1,181 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/models/habitaciones_models.dart';
-import '../models/luces_models.dart';
 
 class HabitacionesController extends GetxController {
-  var habitacionesList = <Habitaciones>[].obs;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  final String habitacionesColeccion = 'habitaciones';
+  // Estado de habitaciones
+  final RxList<Habitaciones> habitacionesList = <Habitaciones>[].obs;
+  final RxBool isLoading = false.obs;
+
+  // Stream de habitaciones
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _habSub;
+
+  String? get currentUserId => _auth.currentUser?.uid;
 
   @override
   void onInit() {
     super.onInit();
-    _cargarHabitacionesIniciales();
-  }
 
-  void _cargarHabitacionesIniciales() {
-    habitacionesList.clear();
-    habitacionesList.addAll([
-      Habitaciones(
-        nombre: 'Sala',
-        icon: Icons.weekend,
-        color: Colors.blue,
-        luces: [
-          Luces(
-            nombre: 'Luz 1',
-            encendida: true,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 2',
-            encendida: true,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 3',
-            encendida: true,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 4',
-            encendida: true,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 5',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-        ],
-      ),
-      Habitaciones(
-        nombre: 'Dormitorio',
-        icon: Icons.bed,
-        color: Colors.blue,
-        luces: [
-          Luces(
-            nombre: 'Luz 1',
-            encendida: true,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 2',
-            encendida: true,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 3',
-            encendida: true,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 4',
-            encendida: true,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 5',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-        ],
-      ),
-      Habitaciones(
-        nombre: 'Baño',
-        icon: Icons.bathtub,
-        color: Colors.blue,
-        luces: [
-          Luces(
-            nombre: 'Luz 1',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 2',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 3',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 4',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 5',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-        ],
-      ),
-      Habitaciones(
-        nombre: 'Terraza',
-        icon: Icons.deck,
-        color: Colors.green,
-        luces: [
-          Luces(
-            nombre: 'Luz 1',
-            encendida: true,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 2',
-            encendida: true,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 3',
-            encendida: true,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 4',
-            encendida: true,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 5',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-        ],
-      ),
-      Habitaciones(
-        nombre: 'Cocina',
-        icon: Icons.kitchen,
-        color: Colors.black54,
-        luces: [
-          Luces(
-            nombre: 'Luz 1',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 2',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 3',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 4',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-          Luces(
-            nombre: 'Luz 5',
-            encendida: false,
-            intensidad: 0.5,
-            color: Colors.white,
-          ),
-        ],
-      ),
-    ]);
-
-    for (var habitacion in habitacionesList) {
-      habitacion.actualizarProgreso();
-    }
-
-    habitacionesList.refresh();
-  }
-
-  void agregarHabitacion(String nombre, {IconData? icon, Color? color}) {
-    final nuevaHabitacion = Habitaciones(
-      nombre: nombre,
-      icon: icon ?? Icons.room,
-      color: color ?? Colors.purple,
-      luces: [
-        Luces(
-          nombre: 'Nueva luz',
-          encendida: false,
-          intensidad: 0.5,
-          color: Colors.white,
-        ),
-      ],
-    );
-    nuevaHabitacion.actualizarProgreso();
-    habitacionesList.add(nuevaHabitacion);
-  }
-
-  void cambiarEstadoLuz(int habitacionIndex, int luzIndex, bool encendida) {
-    if (habitacionIndex >= 0 && habitacionIndex < habitacionesList.length) {
-      final habitacion = habitacionesList[habitacionIndex];
-
-      if (luzIndex >= 0 && luzIndex < habitacion.luces.length) {
-        habitacion.luces[luzIndex].encendida = encendida;
-        habitacion.actualizarProgreso();
-        habitacionesList.refresh();
+    // Reacciona a cambios de sesión
+    _auth.userChanges().listen((user) {
+      if (user == null) {
+        limpiarDatos();
+      } else {
+        cargarHabitacionesUsuario();
       }
+    });
+
+    // Si ya hay sesión al iniciar
+    if (currentUserId != null) {
+      cargarHabitacionesUsuario();
     }
   }
 
-  Habitaciones? obtenerHabitacion(int index) {
-    if (index >= 0 && index < habitacionesList.length) {
-      return habitacionesList[index];
-    }
-    return null;
+  @override
+  void onClose() {
+    _detenerStream();
+    super.onClose();
   }
 
-  void cambiarEstadoTodasLuces(int habitacionIndex, bool encendida) {
-    if (habitacionIndex >= 0 && habitacionIndex < habitacionesList.length) {
-      final habitacion = habitacionesList[habitacionIndex];
+  // Escuchar habitaciones del usuario en tiempo real
+  Future<void> cargarHabitacionesUsuario() async {
+    final uid = currentUserId;
+    if (uid == null) return;
 
-      // Cambiar el estado de todas las luces
-      for (var luz in habitacion.luces) {
-        luz.encendida = encendida;
-      }
+    await _habSub?.cancel();
+    isLoading.value = true;
 
-      habitacion.actualizarProgreso();
-      habitacionesList.refresh();
-    }
+    _habSub = _firestore
+        .collection(habitacionesColeccion)
+        .where('idUsuario', isEqualTo: uid)
+        .snapshots()
+        .listen(
+          (snap) {
+            final lista = snap.docs
+                .where((d) => d.exists && d.data().isNotEmpty)
+                .map((d) => Habitaciones.fromFirebase(d.data()))
+                .toList();
+
+            // Orden opcional por nombre
+            lista.sort(
+              (a, b) =>
+                  a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase()),
+            );
+
+            habitacionesList.assignAll(lista);
+            isLoading.value = false;
+          },
+          onError: (e) {
+            isLoading.value = false;
+            Get.snackbar('Habitaciones', 'Error al escuchar habitaciones: $e');
+          },
+        );
   }
 
-  void configurarLuz(
-    int habitacionIndex,
-    int luzIndex, {
-    bool? encendida,
-    double? intensidad,
+  // Crear habitación (sin array de luces en el doc)
+  Future<void> agregarHabitacion(
+    String nombre, {
+    IconData? icon,
     Color? color,
-  }) {
-    if (habitacionIndex >= 0 && habitacionIndex < habitacionesList.length) {
-      final habitacion = habitacionesList[habitacionIndex];
+  }) async {
+    final uid = currentUserId;
+    if (uid == null) {
+      Get.snackbar('Habitaciones', 'Debe estar autenticado');
+      return;
+    }
+    if (nombre.trim().isEmpty) {
+      Get.snackbar('Habitaciones', 'El nombre no puede estar vacío');
+      return;
+    }
 
-      if (luzIndex >= 0 && luzIndex < habitacion.luces.length) {
-        final luz = habitacion.luces[luzIndex];
-        if (encendida != null) {
-          luz.encendida = encendida;
-        }
-        if (intensidad != null) {
-          luz.intensidad = intensidad;
-        }
-        if (color != null) {
-          luz.color = color;
-        }
+    try {
+      final id = _firestore.collection(habitacionesColeccion).doc().id;
+      final data = {
+        'id': UniqueKey().toString(),
+        'idUsuario': uid,
+        'nombre': nombre.trim(),
+        if (icon != null) 'icon': icon.codePoint,
+        if (color != null) 'color': color.value,
+        'createdAt': FieldValue.serverTimestamp(),
+        // Importante: no guardar campo "luces"
+      };
 
-        habitacion.actualizarProgreso();
-        habitacionesList.refresh();
-      }
+      await _firestore.collection(habitacionesColeccion).doc(id).set(data);
+      Get.snackbar('Habitaciones', 'Habitación "$nombre" creada');
+      // El stream actualizará habitacionesList
+    } catch (e) {
+      Get.snackbar('Habitaciones', 'No se pudo crear: $e');
     }
   }
 
-  String cantidadLuces() {
-    final lista = habitacionesList;
-    if (lista.isEmpty) {
-      return '0/0';
+  // Actualizar datos básicos de la habitación
+  Future<void> actualizarHabitacion(
+    String habitacionId, {
+    String? nombre,
+    IconData? icon,
+    Color? color,
+  }) async {
+    final data = <String, dynamic>{};
+    if (nombre != null) data['nombre'] = nombre.trim();
+    if (icon != null) data['icon'] = icon.codePoint;
+    if (color != null) data['color'] = color.value;
+
+    if (data.isEmpty) return;
+
+    try {
+      await _firestore
+          .collection(habitacionesColeccion)
+          .doc(habitacionId)
+          .update(data);
+      Get.snackbar('Habitaciones', 'Habitación actualizada');
+    } catch (e) {
+      Get.snackbar('Habitaciones', 'No se pudo actualizar: $e');
     }
-    final totalLuces = lista.fold<int>(
-      0,
-      (sum, habitacion) => sum + habitacion.luces.length,
-    );
-    final totalEncendidas = lista.fold<int>(
-      0,
-      (sum, habitacion) =>
-          sum + habitacion.luces.where((luz) => luz.encendida).length,
-    );
-    return '$totalEncendidas/$totalLuces';
+  }
+
+  // Eliminar habitación (no toca colección luces)
+  Future<void> eliminarHabitacion(String habitacionId) async {
+    try {
+      await _firestore
+          .collection(habitacionesColeccion)
+          .doc(habitacionId)
+          .delete();
+      Get.snackbar('Habitaciones', 'Habitación eliminada');
+      // El stream removerá la habitación de la lista
+    } catch (e) {
+      Get.snackbar('Habitaciones', 'No se pudo eliminar: $e');
+    }
+  }
+
+  // Recargar (reinicia el stream)
+  Future<void> recargarHabitaciones() async {
+    await cargarHabitacionesUsuario();
+  }
+
+  // Limpiar datos (al cerrar sesión)
+  void limpiarDatos() {
+    _detenerStream();
+    habitacionesList.clear();
+    isLoading.value = false;
+  }
+
+  void _detenerStream() {
+    _habSub?.cancel();
+    _habSub = null;
+  }
+
+  // Obtener habitación por índice
+  Habitaciones? obtenerHabitacion(int index) {
+    if (index >= 0 && index < habitacionesList.length)
+      return habitacionesList[index];
+    return null;
   }
 }

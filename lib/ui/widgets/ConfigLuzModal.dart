@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
+import 'package:smart_ilumina/controllers/luz_controller.dart';
 import 'ArcoIntensidad.dart';
 
 class ConfigLuzModal extends StatefulWidget {
-  final int habitacionIndex;
-  final int luzIndex;
+  final String habitacionId;
+  final String luzId;
   final VoidCallback? onSaved;
 
   const ConfigLuzModal({
     super.key,
-    required this.habitacionIndex,
-    required this.luzIndex,
+    required this.habitacionId,
+    required this.luzId,
     this.onSaved,
   });
 
@@ -20,173 +20,214 @@ class ConfigLuzModal extends StatefulWidget {
 }
 
 class _ConfigLuzModalState extends State<ConfigLuzModal> {
-  final HabitacionesController habitacionesController =
-      Get.find<HabitacionesController>();
-
-  late bool encendida;
-  late double intensidad; // 0.0 - 1.0
-  late Color colorActual;
-
-  final List<Color> presets = const [
-    Colors.blue,
-    Colors.yellow,
-    Colors.white,
-    Colors.red,
-    Colors.green,
-  ];
+  final LucesController lucesController = Get.find();
 
   @override
   void initState() {
     super.initState();
-    final luz = habitacionesController
-        .habitacionesList[widget.habitacionIndex]
-        .luces[widget.luzIndex];
-
-    encendida = luz.encendida;
-    intensidad = luz.intensidad;
-    colorActual = luz.color;
+    // Garantiza que estemos escuchando la habitación correcta
+    if (lucesController.habitacionActualId.value != widget.habitacionId) {
+      lucesController.escucharLucesDeHabitacion(widget.habitacionId);
+    }
   }
 
-  void _guardar() {
-    habitacionesController.configurarLuz(
-      widget.habitacionIndex,
-      widget.luzIndex,
-      encendida: encendida,
-      intensidad: intensidad,
-      color: colorActual,
+  //Alerta para confirmar el desvincular luz
+  void _confirmardesvincularLuz(String luzId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Desvincular luz'),
+        content: const Text('¿Está seguro de desvincular esta luz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await lucesController.deshabilitarLuz(luzId);
+              Get.back();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
     );
-    widget.onSaved?.call();
-    Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    final hab = habitacionesController.habitacionesList[widget.habitacionIndex];
-    final luz = hab.luces[widget.luzIndex];
-    final String titulo = 'Configurar: ${luz.nombre}';
+    return Obx(() {
+      final luz = lucesController.luces.firstWhereOrNull(
+        (l) => l.id == widget.luzId,
+      );
 
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    titulo,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+      if (luz == null) {
+        return const SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [CircularProgressIndicator()],
+          ),
+        );
+      }
+
+      final titulo = 'Configurar: ${luz.nombre}';
+      final colorActual = Color(luz.color.value);
+
+      final presets = <Color>[
+        Colors.blue,
+        Colors.yellow,
+        Colors.white,
+        Colors.red,
+        Colors.green,
+      ];
+
+      return SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      titulo,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 48),
-            ],
-          ),
-          const SizedBox(height: 8),
 
-          // Colores rápidos + estado + porcentaje
-          Row(
-            children: [
-              const Icon(Icons.lightbulb_outline, color: Colors.blue, size: 24),
-              const SizedBox(width: 6),
-              ...presets.map(
-                (c) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: GestureDetector(
-                    onTap: () => setState(() => colorActual = c),
-                    child: Container(
-                      width: 18,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: c,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: colorActual.value == c.value
-                              ? Colors.black
-                              : Colors.white,
-                          width: 2,
+                IconButton(
+                  onPressed: () {
+                    _confirmardesvincularLuz(luz.id);
+                  },
+                  icon: Icon(Icons.exit_to_app),
+                  color: Colors.red,
+                  tooltip: 'Desvincular luz',
+                ),
+                //const SizedBox(width: 48),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Colores + switch
+            Row(
+              children: [
+                const Icon(
+                  Icons.lightbulb_outline,
+                  color: Colors.blue,
+                  size: 24,
+                ),
+                const SizedBox(width: 6),
+                ...presets.map(
+                  (c) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: GestureDetector(
+                      onTap: () => lucesController.cambiarColor(luz.id, c),
+                      child: Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: c,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: colorActual.value == c.value
+                                ? Colors.black
+                                : Colors.white,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const Spacer(),
-              Switch(
-                value: encendida,
-                activeThumbColor: Colors.white,
-                activeTrackColor: hab.color,
-                onChanged: (v) => setState(() => encendida = v),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-          const Text('Luz', style: TextStyle(fontWeight: FontWeight.bold)),
-          Text(
-            'Nivel de Intensidad',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-
-          // Intensidad con arco
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${(intensidad * 100).round()}%',
-                      style: const TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Text('Intensidad'),
-                  ],
+                const Spacer(),
+                Switch(
+                  value: luz.encendida,
+                  activeThumbColor: Colors.white,
+                  activeTrackColor: colorActual,
+                  onChanged: (v) => lucesController.cambiarEstadoLuz(luz.id, v),
                 ),
-              ),
-              SizedBox(
-                width: 150,
-                height: 150,
-                child: ArcoIntensidad(
-                  color: colorActual,
-                  value: intensidad,
-                  onChanged: (v) => setState(() => intensidad = v),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: _guardar,
-              child: const Text('Guardar'),
+                const SizedBox(width: 8),
+              ],
             ),
-          ),
-        ],
-      ),
-    );
+
+            const SizedBox(height: 8),
+            const Text('Luz', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Nivel de Intensidad',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
+
+            // Intensidad con arco (reactivo)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${(luz.intensidad * 100).round()}%',
+                        style: const TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text('Intensidad'),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  width: 150,
+                  height: 150,
+                  child: ArcoIntensidad(
+                    color: colorActual,
+                    value: luz.intensidad,
+                    onChanged: (v) =>
+                        lucesController.cambiarIntensidadDebounced(luz.id, v),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () {
+                  widget.onSaved?.call();
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Guardar'),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }

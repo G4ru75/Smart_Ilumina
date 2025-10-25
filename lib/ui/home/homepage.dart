@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
+import 'package:smart_ilumina/controllers/luz_controller.dart';
 import 'package:smart_ilumina/ui/widgets/HabitacionesCard.dart';
 import 'package:smart_ilumina/ui/widgets/InfoCard.dart';
 import 'package:smart_ilumina/ui/widgets/Navbar.dart';
+import 'package:smart_ilumina/utils/lucesProgreso.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -13,7 +14,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final HabitacionesController habitacionesController = Get.find();
+  final LucesController lucesController = Get.find();
 
   Widget _buildInfoCards() {
     return Padding(
@@ -24,17 +25,52 @@ class _HomePageState extends State<HomePage> {
           runSpacing: 20,
           alignment: WrapAlignment.center,
           children: [
-            InfoCard(
-              icono: Icons.lightbulb,
-              titulo: 'Luces activas',
-              informacion: habitacionesController.cantidadLuces(),
-              color: Colors.yellow[700]!,
+            StreamBuilder<LucesProgreso>(
+              stream: lucesController.progresoGlobalUsuario(),
+              builder: (context, snapshot) {
+                // Mientras carga
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return InfoCard(
+                    icono: Icons.lightbulb,
+                    titulo: 'Luces activas',
+                    informacion: '...',
+                    color: Colors.yellow[700]!,
+                  );
+                }
+
+                // Si hay error
+                if (snapshot.hasError) {
+                  return InfoCard(
+                    icono: Icons.lightbulb,
+                    titulo: 'Luces activas',
+                    informacion: '0/0',
+                    color: Colors.yellow[700]!,
+                  );
+                }
+
+                // Obtener el progreso
+                final progreso =
+                    snapshot.data ??
+                    const LucesProgreso(total: 0, encendidas: 0);
+
+                return InfoCard(
+                  icono: Icons.lightbulb,
+                  titulo: 'Luces activas',
+                  informacion: progreso.texto,
+                  color: Colors.yellow[700]!,
+                );
+              },
             ),
-            InfoCard(
-              icono: Icons.access_time,
-              titulo: 'Horarios',
-              informacion: 'Gestionar\nhorarios',
-              color: Colors.grey[700]!,
+            GestureDetector(
+              onTap: () {
+                Get.toNamed('/horarios');
+              },
+              child: InfoCard(
+                icono: Icons.access_time,
+                titulo: 'Horarios',
+                informacion: 'Gestionar\nhorarios',
+                color: Colors.grey[700]!,
+              ),
             ),
             InfoCard(
               icono: Icons.flash_on,
@@ -51,18 +87,18 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFE6ECF5),
+      backgroundColor: const Color(0xFFE6ECF5),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Navbar(),
-              SizedBox(height: 15),
-              _buildInfoCards(),
-              SizedBox(height: 20),
-              HabitacionesCard(),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Navbar(),
+            const SizedBox(height: 15),
+            _buildInfoCards(),
+            const SizedBox(height: 10),
+            // El resto del espacio para el card con scroll interno
+            const Expanded(child: HabitacionesCard()),
+          ],
         ),
       ),
     );

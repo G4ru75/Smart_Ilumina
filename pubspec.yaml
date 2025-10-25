@@ -40,7 +40,9 @@ dependencies:
   firebase_auth: ^4.17.9
   cloud_firestore: ^4.15.9 
   get_storage: ^2.1.1
-
+  path_provider: ^2.1.4
+  intl: ^0.20.2
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -99,9 +101,8 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  # Coloca tu ícono base en esta ruta (PNG cuadrado, recomendado 1024x1024)
+
   image_path: lib\assets\app_icon.png
-  # Para Android 8+ (ícono adaptativo). Opcional si no defines foreground/background separados
-  # adaptive_icon_background: "#FFFFFF"  # o una imagen: assets/app_icon_bg.png
-  # adaptive_icon_foreground: assets/app_icon_fg.png
+  adaptive_icon_background: "#FFFFFF"  
+  adaptive_icon_foreground: assets/app_icon_fg.png
   min_sdk_android: 21
