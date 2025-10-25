@@ -228,10 +228,7 @@ class UsuariosController extends GetxController {
   }
 
   /// Actualiza los datos del usuario
-  Future<bool> updateUserData({
-    String? nombre,
-    DateTime? fechaNacimiento,
-  }) async {
+  Future<bool> updateUserData({String? nombre, String? email}) async {
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null) return false;
@@ -241,7 +238,7 @@ class UsuariosController extends GetxController {
       // Actualizar en Firestore
       final updates = <String, dynamic>{};
       if (nombre != null) updates['nombre'] = nombre;
-      if (fechaNacimiento != null) updates['fechaNacimiento'] = fechaNacimiento;
+      if (email != null) updates['email'] = email;
 
       if (updates.isNotEmpty) {
         await _firestore
@@ -253,8 +250,8 @@ class UsuariosController extends GetxController {
         if (usuario.value != null) {
           usuario.value = Usuario(
             nombre: nombre ?? usuario.value!.nombre,
-            fechaNacimiento: fechaNacimiento ?? usuario.value!.fechaNacimiento,
-            email: usuario.value!.email,
+            fechaNacimiento: usuario.value!.fechaNacimiento,
+            email: email ?? usuario.value!.email,
           );
         }
       }
