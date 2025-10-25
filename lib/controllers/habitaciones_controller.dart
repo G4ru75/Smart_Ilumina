@@ -10,6 +10,7 @@ class HabitacionesController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  final String habitacionesColeccion = 'habitaciones';
   // Estado de habitaciones
   final RxList<Habitaciones> habitacionesList = <Habitaciones>[].obs;
   final RxBool isLoading = false.obs;
@@ -53,7 +54,7 @@ class HabitacionesController extends GetxController {
     isLoading.value = true;
 
     _habSub = _firestore
-        .collection('habitaciones')
+        .collection(habitacionesColeccion)
         .where('idUsuario', isEqualTo: uid)
         .snapshots()
         .listen(
@@ -96,7 +97,7 @@ class HabitacionesController extends GetxController {
     }
 
     try {
-      final id = _firestore.collection('habitaciones').doc().id;
+      final id = _firestore.collection(habitacionesColeccion).doc().id;
       final data = {
         'id': UniqueKey().toString(),
         'idUsuario': uid,
@@ -107,7 +108,7 @@ class HabitacionesController extends GetxController {
         // Importante: no guardar campo "luces"
       };
 
-      await _firestore.collection('habitaciones').doc(id).set(data);
+      await _firestore.collection(habitacionesColeccion).doc(id).set(data);
       Get.snackbar('Habitaciones', 'Habitación "$nombre" creada');
       // El stream actualizará habitacionesList
     } catch (e) {
@@ -131,7 +132,7 @@ class HabitacionesController extends GetxController {
 
     try {
       await _firestore
-          .collection('habitaciones')
+          .collection(habitacionesColeccion)
           .doc(habitacionId)
           .update(data);
       Get.snackbar('Habitaciones', 'Habitación actualizada');
@@ -143,7 +144,10 @@ class HabitacionesController extends GetxController {
   // Eliminar habitación (no toca colección luces)
   Future<void> eliminarHabitacion(String habitacionId) async {
     try {
-      await _firestore.collection('habitaciones').doc(habitacionId).delete();
+      await _firestore
+          .collection(habitacionesColeccion)
+          .doc(habitacionId)
+          .delete();
       Get.snackbar('Habitaciones', 'Habitación eliminada');
       // El stream removerá la habitación de la lista
     } catch (e) {

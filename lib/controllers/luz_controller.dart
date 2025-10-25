@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
-import 'package:smart_ilumina/models/Horarios_models.dart';
 import 'package:smart_ilumina/models/ciclos_models.dart';
 import 'package:smart_ilumina/models/luces_models.dart';
 import 'package:smart_ilumina/utils/lucesProgreso.dart';
@@ -232,31 +231,6 @@ class LucesController extends GetxController {
       return Stream.value(<Luces>[]);
     }
   }
-  /*
-  Future<void> cambiarHoras(
-    String luzId, {
-    TimeOfDay? horaEncendido,
-    TimeOfDay? horaApagado,
-  }) async {
-    final data = <String, dynamic>{};
-    if (horaEncendido != null) {
-      data['horaEncendido'] = {
-        'hora': horaEncendido.hour,
-        'minuto': horaEncendido.minute,
-      };
-      _setLocal(luzId, (l) => l.horaEncendido = horaEncendido);
-    }
-    if (horaApagado != null) {
-      data['horaApagado'] = {
-        'hora': horaApagado.hour,
-        'minuto': horaApagado.minute,
-      };
-      _setLocal(luzId, (l) => l.horaApagado = horaApagado);
-    }
-    if (data.isNotEmpty) {
-      await _ActualizarLuz(luzId, data);
-    }
-  }*/
 
   // Encender o apagar todas en la habitación actual
   Future<void> cambiarEstadoTodas(bool encendida) async {
@@ -323,7 +297,6 @@ class LucesController extends GetxController {
       for (final doc in querySnapshot.docs) {
         final data = doc.data();
         final luz = Luces.fromMap(data);
-        bool? nuevoEstado;
 
         for (final horario in luz.horarios) {
           if (!horario.activo) continue;
