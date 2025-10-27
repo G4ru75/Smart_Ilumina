@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
-import 'package:smart_ilumina/models/ciclos_models.dart';
 import 'package:smart_ilumina/models/luces_models.dart';
 import 'package:smart_ilumina/utils/lucesProgreso.dart';
 
@@ -21,67 +20,17 @@ class LucesController extends GetxController {
   // Streams y timers
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _sub;
   final Map<String, Timer> _debouncers = {}; // por luzId para intensidad
-  Timer? _scheduler; // verificador de hora encendido/apagado
-
-  final Map<String, DateTime> _ultimoHorarioAplicado = {};
 
   @override
   void onInit() {
-    _startScheduler();
     super.onInit();
   }
 
   @override
   void onClose() {
     _cancelStream();
-    _stopScheduler();
     _cancelAllDebouncers();
-    _ultimoHorarioAplicado.clear();
     super.onClose();
-  }
-
-  Future<void> configurarCiclos(String luzId, Ciclos ciclos) async {
-    try {
-      await _firestore.collection(nombreColeccion).doc(luzId).update({
-        'ciclos': ciclos.toMap(),
-      });
-
-      Get.snackbar(
-        'Ciclos configurados',
-        'Los ciclos han sido configurados correctamente',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Ops, ha ocurrido un error: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
-  }
-
-  Future<void> eliminarCiclos(String luzId) async {
-    try {
-      await _firestore.collection(nombreColeccion).doc(luzId).update({
-        'ciclos': null,
-      });
-
-      Get.snackbar(
-        'Ciclos eliminados',
-        'Los ciclos han sido eliminados correctamente',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Ops, ha ocurrido un error: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
   }
 
   Stream<List<Luces>> lucesStreamDeHabitacion(String habitacionId) {
@@ -126,6 +75,7 @@ class LucesController extends GetxController {
         luces[idx].idHabitacion = habitacionId;
         luces[idx].vinculada = true;
         luces.refresh();
+        print('Se vincula la luz $luzId a la habitación $habitacionId');
       }
     } catch (e) {
       error.value = e.toString();
@@ -133,7 +83,6 @@ class LucesController extends GetxController {
     }
   }
 
-  // Escuchar luces por idHabitacion
   Future<void> escucharLucesDeHabitacion(String idHabitacion) async {
     if (idHabitacion.isEmpty) {
       luces.clear();
@@ -173,26 +122,22 @@ class LucesController extends GetxController {
     luces.clear();
   }
 
-  // siguen las funciones de las modificaciones de las luces
-
   Future<void> cambiarEstadoLuz(String luzId, bool encendida) async {
     _setLocal(luzId, (l) => l.encendida = encendida);
-    await _ActualizarLuz(luzId, {'encendida': encendida});
+    await _actualizarLuz(luzId, {'encendida': encendida});
   }
 
   Future<void> cambiarColor(String luzId, Color color) async {
     _setLocal(luzId, (l) => l.color = color);
-    await _ActualizarLuz(luzId, {'color': color.value});
+    await _actualizarLuz(luzId, {'color': color.value});
   }
 
   void cambiarIntensidadDebounced(String luzId, double valor) {
-    // Actualiza local de inmediato
     _setLocal(luzId, (l) => l.intensidad = valor.clamp(0.0, 1.0));
 
-    // Debounce para escribir en Firestore
     _debouncers[luzId]?.cancel();
     _debouncers[luzId] = Timer(const Duration(milliseconds: 180), () async {
-      await _ActualizarLuz(luzId, {'intensidad': valor.clamp(0.0, 1.0)});
+      await _actualizarLuz(luzId, {'intensidad': valor.clamp(0.0, 1.0)});
       _debouncers.remove(luzId);
     });
   }
@@ -251,7 +196,6 @@ class LucesController extends GetxController {
     }
   }
 
-  // Encender o apagar todas en la habitación actual
   Future<void> cambiarEstadoTodas(bool encendida) async {
     final idHab = habitacionActualId.value;
     if (idHab == null) return;
@@ -273,128 +217,8 @@ class LucesController extends GetxController {
     await batch.commit();
   }
 
-  //Para la hora, revisa la hora y si debe encender una luz o no
-  void _startScheduler() {
-    _scheduler?.cancel();
-
-    _scheduler = Timer.periodic(
-      const Duration(seconds: 10),
-      (_) => _applySchedulesTick(),
-    );
-    _applySchedulesTick(); // primera corrida inmediata
-  }
-
-  void _stopScheduler() {
-    _scheduler?.cancel();
-    _scheduler = null;
-  }
-
-  Future<void> _applySchedulesTick() async {
-    try {
-      final habitacionIds = habitacionesController.habitacionesList
-          .map((h) => h.id)
-          .where((id) => id.isNotEmpty)
-          .toList();
-
-      if (habitacionIds.isEmpty) return;
-
-      final querySnapshot = await _firestore
-          .collection(nombreColeccion)
-          .where('idHabitacion', whereIn: habitacionIds)
-          .where('vinculada', isEqualTo: true)
-          .get();
-
-      if (querySnapshot.docs.isEmpty) return;
-
-      final now = DateTime.now();
-      final horaActual = TimeOfDay.fromDateTime(now);
-      final diaActual = now.weekday; // 1=Lunes, 7=Domingo
-
-      final batch = _firestore.batch();
-      bool hayCambios = false;
-
-      for (final doc in querySnapshot.docs) {
-        final data = doc.data();
-        final luz = Luces.fromMap(data);
-
-        for (final horario in luz.horarios) {
-          if (!horario.activo) continue;
-          if (!horario.diasSemana.contains(diaActual)) continue;
-
-          final cacheKey = '${luz.id}-${horario.id}';
-          final ultimaAplicacion = _ultimoHorarioAplicado[cacheKey];
-
-          if (ultimaAplicacion != null) {
-            final mismoMinuto =
-                ultimaAplicacion.year == now.year &&
-                ultimaAplicacion.month == now.month &&
-                ultimaAplicacion.day == now.day &&
-                ultimaAplicacion.hour == now.hour &&
-                ultimaAplicacion.minute == now.minute;
-
-            if (mismoMinuto) continue;
-          }
-
-          final encender = _horaExacta(horaActual, horario.horaEncendido);
-          final apagar = _horaExacta(horaActual, horario.horaApagado);
-
-          bool? nuevoEstado;
-
-          if (encender) {
-            nuevoEstado = true;
-          } else if (apagar) {
-            nuevoEstado = false;
-          }
-
-          if (nuevoEstado != null) {
-            batch.update(doc.reference, {'encendida': nuevoEstado});
-            _ultimoHorarioAplicado[cacheKey] = now;
-            hayCambios = true;
-
-            _setLocal(luz.id, (l) => l.encendida = nuevoEstado!);
-            break; // Asegura de que solo sea una ver por ciclo
-          }
-        }
-
-        if (luz.ciclos != null && luz.ciclos!.activo) {
-          await _aplicarCiclo(luz, batch);
-          hayCambios = true;
-        }
-      }
-
-      if (hayCambios) {
-        await batch.commit();
-      }
-    } catch (e, stackTrace) {
-      print('Error en el scheduler: $e');
-      print('Stack trace: $stackTrace');
-    }
-  }
-
-  Future<void> _aplicarCiclo(Luces luz, WriteBatch batch) async {}
-
-  // Con soporte a cruce de medianoche
-  bool _horaExacta(TimeOfDay actual, TimeOfDay programada) {
-    final actualMinutos = actual.hour * 60 + actual.minute;
-    final programadaMinutos = programada.hour * 60 + programada.minute;
-
-    return actualMinutos == programadaMinutos;
-  }
-
-  Future<void> _ActualizarLuz(String luzId, Map<String, dynamic> data) async {
-    try {
-      await _firestore.collection(nombreColeccion).doc(luzId).update(data);
-    } catch (e) {
-      error.value = e.toString();
-      Get.snackbar('Luces', 'No se pudo actualizar la luz: $e');
-    }
-  }
-
-  /// Este es para la cantidad de luces del usuario encendidas encima del total de luces del usuario
-  /// tambien se ayuda del utils de lucesProgreso
   Stream<LucesProgreso> progresoGlobalUsuario() {
     try {
-      // Si no hay habitaciones, devuelve 0/0
       if (habitacionesController.habitacionesList.isEmpty) {
         return Stream.value(const LucesProgreso(total: 0, encendidas: 0));
       }
@@ -408,7 +232,6 @@ class LucesController extends GetxController {
         return Stream.value(const LucesProgreso(total: 0, encendidas: 0));
       }
 
-      // Escucha todas las luces vinculadas del usuario
       return _firestore
           .collection(nombreColeccion)
           .where('vinculada', isEqualTo: true)
@@ -428,7 +251,6 @@ class LucesController extends GetxController {
     }
   }
 
-  // Este se ayuda del utils de lucesProgreso para dar el progreso de las luces encendidas por habitacion
   Stream<LucesProgreso> progresoPorHabitacionStream(String idHabitacion) {
     if (idHabitacion.isEmpty) {
       return Stream.value(const LucesProgreso(total: 0, encendidas: 0));
@@ -448,7 +270,14 @@ class LucesController extends GetxController {
         });
   }
 
-  // ...existing code...
+  Future<void> _actualizarLuz(String luzId, Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection(nombreColeccion).doc(luzId).update(data);
+    } catch (e) {
+      error.value = e.toString();
+      Get.snackbar('Luces', 'No se pudo actualizar la luz: $e');
+    }
+  }
 
   void _setLocal(String luzId, void Function(Luces l) set) {
     final idx = luces.indexWhere((l) => l.id == luzId);

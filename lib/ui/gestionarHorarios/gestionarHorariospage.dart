@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_ilumina/controllers/ciclos_controller.dart';
 import 'package:smart_ilumina/controllers/luz_controller.dart';
+import 'package:smart_ilumina/models/ciclos_models.dart';
 import 'package:smart_ilumina/models/luces_models.dart';
 import 'package:smart_ilumina/models/Horarios_models.dart';
 import 'package:smart_ilumina/ui/widgets/Navbar.dart';
-
 import '../../controllers/horarios_controller.dart';
 
 class HorariosPage extends StatefulWidget {
@@ -17,8 +18,202 @@ class HorariosPage extends StatefulWidget {
 class _HorariosPageState extends State<HorariosPage> {
   final HorariosController horarioController = Get.find();
   final LucesController lucesController = Get.find();
+  final CiclosController ciclosController = Get.find();
 
-  //Dialogo para aagregar el nuevo horario
+  void _mostrarDialogoCiclo(String luzId, Ciclos? cicloActual) {
+    final encendidoController = TextEditingController(
+      text: cicloActual?.duracionEncendido.toString() ?? '5',
+    );
+    final apagadoController = TextEditingController(
+      text: cicloActual?.duracionApagado.toString() ?? '5',
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.sync, color: Colors.blue.shade700),
+            const SizedBox(width: 8),
+            Text(cicloActual != null ? 'Editar Ciclo' : 'Configurar Ciclo'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'La luz se encenderá y apagará automáticamente según los tiempos configurados.',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+
+              // Tiempo encendido
+              TextField(
+                controller: encendidoController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Tiempo encendido (segundos)',
+                  prefixIcon: Icon(
+                    Icons.lightbulb,
+                    color: Colors.amber.shade700,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  helperText: 'Cuánto tiempo estará encendida',
+                  helperStyle: const TextStyle(fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Tiempo apagado
+              TextField(
+                controller: apagadoController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Tiempo apagado (segundos)',
+                  prefixIcon: Icon(
+                    Icons.lightbulb_outline,
+                    color: Colors.grey.shade600,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  helperText: 'Cuánto tiempo estará apagada',
+                  helperStyle: const TextStyle(fontSize: 12),
+                ),
+              ),
+
+              if (cicloActual != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: cicloActual.activo
+                        ? Colors.green.shade50
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: cicloActual.activo
+                          ? Colors.green.shade300
+                          : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        cicloActual.activo ? Icons.check_circle : Icons.cancel,
+                        color: cicloActual.activo ? Colors.green : Colors.grey,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          cicloActual.activo
+                              ? 'Ciclo actualmente activo'
+                              : 'Ciclo pausado',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: cicloActual.activo
+                                ? Colors.green.shade700
+                                : Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final encendido = int.tryParse(encendidoController.text);
+              final apagado = int.tryParse(apagadoController.text);
+
+              if (encendido == null || apagado == null) {
+                Get.snackbar(
+                  'Error',
+                  'Ingresa valores numéricos válidos',
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
+                return;
+              }
+
+              if (encendido <= 0 || apagado <= 0) {
+                Get.snackbar(
+                  'Error',
+                  'Los tiempos deben ser mayores a 0',
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
+                return;
+              }
+
+              Navigator.pop(context);
+              await ciclosController.configurarCiclo(
+                luzId: luzId,
+                duracionEncendido: encendido,
+                duracionApagado: apagado,
+                activo: true,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(cicloActual != null ? 'Actualizar' : 'Crear y activar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmarEliminarCiclo(String luzId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+            const SizedBox(width: 8),
+            const Text('Eliminar Ciclo'),
+          ],
+        ),
+        content: const Text(
+          '¿Está seguro de eliminar este ciclo?\n\nEsta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await ciclosController.eliminarCiclo(luzId);
+              if (context.mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _mostrarDialogoNuevoHorario(String luzId) {
     TimeOfDay? horaEncendido;
     TimeOfDay? horaApagado;
@@ -34,7 +229,6 @@ class _HorariosPageState extends State<HorariosPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Hora de encendido
                 const Text(
                   'Hora de Encendido:',
                   style: TextStyle(fontWeight: FontWeight.w600),
@@ -60,7 +254,6 @@ class _HorariosPageState extends State<HorariosPage> {
 
                 const SizedBox(height: 16),
 
-                // Hora de apagado
                 const Text(
                   'Hora de Apagado:',
                   style: TextStyle(fontWeight: FontWeight.w600),
@@ -86,7 +279,6 @@ class _HorariosPageState extends State<HorariosPage> {
 
                 const SizedBox(height: 16),
 
-                // Días de la semana
                 const Text(
                   'Días de la semana:',
                   style: TextStyle(fontWeight: FontWeight.w600),
@@ -173,7 +365,6 @@ class _HorariosPageState extends State<HorariosPage> {
     );
   }
 
-  //Modal para editar horario
   void _mostrarDialogoEditarHorario(String luzId, Horarios horarioActual) {
     TimeOfDay? horaEncendido = horarioActual.horaEncendido;
     TimeOfDay? horaApagado = horarioActual.horaApagado;
@@ -189,7 +380,6 @@ class _HorariosPageState extends State<HorariosPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Hora de encendido
                 const Text(
                   'Hora de Encendido:',
                   style: TextStyle(fontWeight: FontWeight.w600),
@@ -215,7 +405,6 @@ class _HorariosPageState extends State<HorariosPage> {
 
                 const SizedBox(height: 16),
 
-                // Hora de apagado
                 const Text(
                   'Hora de Apagado:',
                   style: TextStyle(fontWeight: FontWeight.w600),
@@ -241,7 +430,6 @@ class _HorariosPageState extends State<HorariosPage> {
 
                 const SizedBox(height: 16),
 
-                // Días de la semana
                 const Text(
                   'Días de la semana:',
                   style: TextStyle(fontWeight: FontWeight.w600),
@@ -306,12 +494,11 @@ class _HorariosPageState extends State<HorariosPage> {
               onPressed: horaEncendido != null && horaApagado != null
                   ? () async {
                       final horarioEditado = Horarios(
-                        id: horarioActual.id, // **Mantener el mismo ID**
+                        id: horarioActual.id,
                         horaEncendido: horaEncendido!,
                         horaApagado: horaApagado!,
                         diasSemana: diasSeleccionados,
-                        activo:
-                            horarioActual.activo, // **Mantener estado activo**
+                        activo: horarioActual.activo,
                       );
 
                       await horarioController.editarHorario(
@@ -333,13 +520,9 @@ class _HorariosPageState extends State<HorariosPage> {
     );
   }
 
-  //Muestra la informacion de cada horario en un card
   Widget _buildHorarioCard(String luzId, Horarios horario) {
     return GestureDetector(
-      onTap: () => _mostrarDialogoEditarHorario(
-        luzId,
-        horario,
-      ), // Click en el card abre el modal de editar
+      onTap: () => _mostrarDialogoEditarHorario(luzId, horario),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
@@ -352,10 +535,8 @@ class _HorariosPageState extends State<HorariosPage> {
         ),
         child: Column(
           children: [
-            // Contenido principal del card
             Row(
               children: [
-                // Icono de estado
                 Icon(
                   horario.activo ? Icons.alarm_on : Icons.alarm_off,
                   color: horario.activo
@@ -365,7 +546,6 @@ class _HorariosPageState extends State<HorariosPage> {
                 ),
                 const SizedBox(width: 12),
 
-                // Horarios
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -412,15 +592,21 @@ class _HorariosPageState extends State<HorariosPage> {
                     ],
                   ),
                 ),
+
+                Icon(
+                  Icons.edit_outlined,
+                  size: 18,
+                  color: Colors.blue.shade400,
+                ),
               ],
             ),
 
             const SizedBox(height: 8),
+            const Divider(height: 1),
             const SizedBox(height: 8),
 
             Row(
               children: [
-                // Switch activar/desactivar
                 Expanded(
                   child: Row(
                     children: [
@@ -457,12 +643,10 @@ class _HorariosPageState extends State<HorariosPage> {
                   ),
                 ),
 
-                // Botón eliminar
                 IconButton(
                   icon: const Icon(Icons.delete_outline, size: 20),
                   color: Colors.red.shade600,
                   onPressed: () {
-                    // Prevenir propagación del tap al card
                     _confirmarEliminarHorario(luzId, horario.id);
                   },
                   tooltip: 'Eliminar horario',
@@ -475,7 +659,6 @@ class _HorariosPageState extends State<HorariosPage> {
     );
   }
 
-  //Alerta para confirmar el eliminar horario
   void _confirmarEliminarHorario(String luzId, String horarioId) {
     showDialog(
       context: context,
@@ -503,7 +686,6 @@ class _HorariosPageState extends State<HorariosPage> {
     );
   }
 
-  // Chip para seleccionar día
   Widget _buildDiaChip(
     String label,
     int dia,
@@ -526,14 +708,12 @@ class _HorariosPageState extends State<HorariosPage> {
     );
   }
 
-  //Formatear TimeOfDay
   String _formatTimeOfDay(TimeOfDay time) {
     final hour = time.hour.toString().padLeft(2, '0');
     final minute = time.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
   }
 
-  //Formatear días de la semana
   String _formatDiasSemana(List<int> dias) {
     if (dias.length == 7) return 'Todos los días';
     if (dias.length == 5 &&
@@ -779,40 +959,200 @@ class _HorariosPageState extends State<HorariosPage> {
 
                                 const SizedBox(height: 8),
 
-                                // Botones de acción rápida
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () async {
-                                          await lucesController
-                                              .cambiarEstadoLuz(
-                                                luz.id,
-                                                !luz.encendida,
-                                              );
-                                        },
-                                        icon: Icon(
-                                          luz.encendida
-                                              ? Icons.lightbulb_outline
-                                              : Icons.lightbulb,
-                                          size: 18,
+                                // Sección de ciclos
+                                if (luz.ciclos != null)
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: luz.ciclos!.activo
+                                          ? Colors.green.shade50
+                                          : Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: luz.ciclos!.activo
+                                            ? Colors.green.shade300
+                                            : Colors.grey.shade300,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              luz.ciclos!.activo
+                                                  ? Icons.sync
+                                                  : Icons.sync_disabled,
+                                              color: luz.ciclos!.activo
+                                                  ? Colors.green.shade700
+                                                  : Colors.grey.shade600,
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Ciclo configurado',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 14,
+                                                      color: luz.ciclos!.activo
+                                                          ? Colors
+                                                                .green
+                                                                .shade700
+                                                          : Colors
+                                                                .grey
+                                                                .shade600,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    '${luz.ciclos!.duracionEncendido}s ON / ${luz.ciclos!.duracionApagado}s OFF',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          Colors.grey.shade700,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Switch(
+                                              value: luz.ciclos!.activo,
+                                              onChanged: (value) async {
+                                                await ciclosController
+                                                    .toggleCiclo(luz.id, value);
+                                              },
+                                              activeColor:
+                                                  Colors.green.shade700,
+                                            ),
+                                          ],
                                         ),
-                                        label: Text(
-                                          luz.encendida ? 'Apagar' : 'Encender',
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: OutlinedButton.icon(
+                                                onPressed: () =>
+                                                    _mostrarDialogoCiclo(
+                                                      luz.id,
+                                                      luz.ciclos,
+                                                    ),
+                                                icon: const Icon(
+                                                  Icons.edit,
+                                                  size: 16,
+                                                ),
+                                                label: const Text(
+                                                  'Editar',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                                style: OutlinedButton.styleFrom(
+                                                  foregroundColor:
+                                                      Colors.blue.shade700,
+                                                  side: BorderSide(
+                                                    color: Colors.blue.shade300,
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 8,
+                                                      ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: OutlinedButton.icon(
+                                                onPressed: () =>
+                                                    _confirmarEliminarCiclo(
+                                                      luz.id,
+                                                    ),
+                                                icon: const Icon(
+                                                  Icons.delete_outline,
+                                                  size: 16,
+                                                ),
+                                                label: const Text(
+                                                  'Eliminar',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                                style: OutlinedButton.styleFrom(
+                                                  foregroundColor:
+                                                      Colors.red.shade600,
+                                                  side: BorderSide(
+                                                    color: Colors.red.shade300,
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 8,
+                                                      ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: luz.encendida
-                                              ? Colors.red.shade600
-                                              : Colors.green.shade600,
-                                          side: BorderSide(
-                                            color: luz.encendida
-                                                ? Colors.red.shade300
-                                                : Colors.green.shade300,
-                                          ),
+                                      ],
+                                    ),
+                                  )
+                                else
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () =>
+                                          _mostrarDialogoCiclo(luz.id, null),
+                                      icon: const Icon(
+                                        Icons.sync_disabled,
+                                        size: 20,
+                                      ),
+                                      label: const Text('Configurar ciclo'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.purple.shade700,
+                                        side: BorderSide(
+                                          color: Colors.purple.shade300,
                                         ),
                                       ),
                                     ),
-                                  ],
+                                  ),
+
+                                const SizedBox(height: 8),
+
+                                // Botón de acción rápida
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () async {
+                                      await lucesController.cambiarEstadoLuz(
+                                        luz.id,
+                                        !luz.encendida,
+                                      );
+                                    },
+                                    icon: Icon(
+                                      luz.encendida
+                                          ? Icons.lightbulb_outline
+                                          : Icons.lightbulb,
+                                      size: 18,
+                                    ),
+                                    label: Text(
+                                      luz.encendida ? 'Apagar' : 'Encender',
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: luz.encendida
+                                          ? Colors.red.shade600
+                                          : Colors.green.shade600,
+                                      side: BorderSide(
+                                        color: luz.encendida
+                                            ? Colors.red.shade300
+                                            : Colors.green.shade300,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
