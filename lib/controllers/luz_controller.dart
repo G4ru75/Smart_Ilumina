@@ -75,7 +75,6 @@ class LucesController extends GetxController {
         luces[idx].idHabitacion = habitacionId;
         luces[idx].vinculada = true;
         luces.refresh();
-        print('Se vincula la luz $luzId a la habitación $habitacionId');
       }
     } catch (e) {
       error.value = e.toString();

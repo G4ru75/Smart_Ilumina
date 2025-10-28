@@ -1,48 +1,125 @@
 import 'package:flutter/material.dart';
 
 // Widget reutilizable para campos de texto
-class TextoField extends StatelessWidget {
-  final String titulo;
-  final TextEditingController controlador;
+class TextoField extends StatefulWidget {
   final bool contrasena;
+  final TextEditingController controlador;
+  final String titulo;
   final String textoSobre;
 
   const TextoField({
     Key? key,
-    required this.titulo,
+    required this.contrasena,
     required this.controlador,
-    this.contrasena = false,
+    required this.titulo,
     required this.textoSobre,
   }) : super(key: key);
 
   @override
+  State<TextoField> createState() => _TextoFieldState();
+}
+
+class _TextoFieldState extends State<TextoField> {
+  bool _obscureText = true;
+  bool _isFocused = false;
+
+  IconData _getIcon() {
+    if (widget.contrasena) return Icons.lock_outline;
+    if (widget.titulo.toLowerCase().contains('email'))
+      return Icons.email_outlined;
+    if (widget.titulo.toLowerCase().contains('nombre')) return Icons.home;
+    return Icons.text_fields;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          titulo,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-            letterSpacing: 1.2,
+    return Focus(
+      onFocusChange: (hasFocus) {
+        setState(() {
+          _isFocused = hasFocus;
+        });
+      },
+      child: TextField(
+        controller: widget.controlador,
+        obscureText: widget.contrasena ? _obscureText : false,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
+        ),
+        decoration: InputDecoration(
+          labelText: widget.titulo,
+          hintText: widget.textoSobre,
+          labelStyle: TextStyle(
+            color: _isFocused
+                ? Colors.blueAccent.shade700
+                : Colors.grey.shade800,
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
+          hintStyle: TextStyle(
+            color: Colors.grey.shade400,
+            fontWeight: FontWeight.w400,
+          ),
+          filled: true,
+          fillColor: Colors.transparent, // Sin fondo blanco
+          // Ícono prefijo con color dinámico
+          prefixIcon: Icon(
+            _getIcon(),
+            color: _isFocused
+                ? Colors.blueAccent.shade700
+                : Colors.grey.shade800,
+            size: 22,
+          ),
+
+          // Toggle de contraseña mejorado
+          suffixIcon: widget.contrasena
+              ? IconButton(
+                  icon: Icon(
+                    _obscureText
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    color: _isFocused
+                        ? Colors.blueAccent.shade100
+                        : Colors.grey.shade800,
+                    size: 22,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureText = !_obscureText;
+                    });
+                  },
+                  splashRadius: 20,
+                  tooltip: _obscureText
+                      ? 'Mostrar contraseña'
+                      : 'Ocultar contraseña',
+                )
+              : null,
+
+          // Bordes mejorados con transición de color
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey.shade800, width: 1.5),
+          ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(
+              color: Colors.blueAccent.shade700,
+              width: 2.5,
+            ),
+          ),
+          errorBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.red, width: 1.5),
+          ),
+          focusedErrorBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.red, width: 2.5),
+          ),
+
+          // Padding
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 0,
+            vertical: 14,
           ),
         ),
-        TextField(
-          controller: controlador,
-          obscureText: contrasena,
-          decoration: InputDecoration(
-            hintText: textoSobre,
-            hintStyle: TextStyle(color: Colors.grey[800]),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.blueAccent),
-            ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.blueAccent, width: 2),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
