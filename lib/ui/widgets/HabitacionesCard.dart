@@ -86,6 +86,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                             titulo: 'Digite el nombre',
                             controlador: txt,
                             textoSobre: 'Cuarto de los niños',
+                            contrasena: false,
                           ),
                           const SizedBox(height: 24),
                           ElevatedButton(
