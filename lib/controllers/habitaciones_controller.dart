@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -80,7 +79,7 @@ class HabitacionesController extends GetxController {
         );
   }
 
-  // Crear habitación (sin array de luces en el doc)
+  // Crear habitación
   Future<void> agregarHabitacion(
     String nombre, {
     IconData? icon,
@@ -105,7 +104,6 @@ class HabitacionesController extends GetxController {
         if (icon != null) 'icon': icon.codePoint,
         if (color != null) 'color': color.value,
         'createdAt': FieldValue.serverTimestamp(),
-        // Importante: no guardar campo "luces"
       };
 
       await _firestore.collection(habitacionesColeccion).doc(id).set(data);
@@ -116,51 +114,12 @@ class HabitacionesController extends GetxController {
     }
   }
 
-  // Actualizar datos básicos de la habitación
-  Future<void> actualizarHabitacion(
-    String habitacionId, {
-    String? nombre,
-    IconData? icon,
-    Color? color,
-  }) async {
-    final data = <String, dynamic>{};
-    if (nombre != null) data['nombre'] = nombre.trim();
-    if (icon != null) data['icon'] = icon.codePoint;
-    if (color != null) data['color'] = color.value;
-
-    if (data.isEmpty) return;
-
-    try {
-      await _firestore
-          .collection(habitacionesColeccion)
-          .doc(habitacionId)
-          .update(data);
-      Get.snackbar('Habitaciones', 'Habitación actualizada');
-    } catch (e) {
-      Get.snackbar('Habitaciones', 'No se pudo actualizar: $e');
-    }
-  }
-
-  // Eliminar habitación (no toca colección luces)
-  Future<void> eliminarHabitacion(String habitacionId) async {
-    try {
-      await _firestore
-          .collection(habitacionesColeccion)
-          .doc(habitacionId)
-          .delete();
-      Get.snackbar('Habitaciones', 'Habitación eliminada');
-      // El stream removerá la habitación de la lista
-    } catch (e) {
-      Get.snackbar('Habitaciones', 'No se pudo eliminar: $e');
-    }
-  }
-
-  // Recargar (reinicia el stream)
+  // Recargar
   Future<void> recargarHabitaciones() async {
     await cargarHabitacionesUsuario();
   }
 
-  // Limpiar datos (al cerrar sesión)
+  // Limpiar datos
   void limpiarDatos() {
     _detenerStream();
     habitacionesList.clear();

@@ -1,6 +1,6 @@
 class Ciclos {
-  int duracionApagado;
-  int duracionEncendido;
+  double duracionApagado;
+  double duracionEncendido;
   bool activo;
 
   Ciclos({
@@ -11,8 +11,8 @@ class Ciclos {
 
   factory Ciclos.fromMap(Map<String, dynamic> map) {
     return Ciclos(
-      duracionApagado: map['duracionApagado'] as int? ?? 0,
-      duracionEncendido: map['duracionEncendido'] as int? ?? 0,
+      duracionApagado: map['duracionApagado'] as double? ?? 0,
+      duracionEncendido: map['duracionEncendido'] as double? ?? 0,
       activo: map['activo'] as bool? ?? false,
     );
   }
