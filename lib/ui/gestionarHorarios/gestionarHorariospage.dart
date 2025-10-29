@@ -137,8 +137,8 @@ class _HorariosPageState extends State<HorariosPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              final encendido = int.tryParse(encendidoController.text);
-              final apagado = int.tryParse(apagadoController.text);
+              final encendido = double.tryParse(encendidoController.text);
+              final apagado = double.tryParse(apagadoController.text);
 
               if (encendido == null || apagado == null) {
                 Get.snackbar(
@@ -150,10 +150,10 @@ class _HorariosPageState extends State<HorariosPage> {
                 return;
               }
 
-              if (encendido <= 0 || apagado <= 0) {
+              if (encendido < 0.1 || apagado < 0.1) {
                 Get.snackbar(
                   'Error',
-                  'Los tiempos deben ser mayores a 0',
+                  'Los tiempos deben ser mayores a 0.1 segundos',
                   backgroundColor: Colors.red,
                   colorText: Colors.white,
                 );
