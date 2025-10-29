@@ -67,7 +67,7 @@ class _ScanerPageState extends State<ScanerPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: Navbar(),
-      backgroundColor: Colors.black,
+      backgroundColor: const Color.fromARGB(255, 82, 212, 108),
       body: SafeArea(
         child: Stack(
           children: [
