@@ -305,12 +305,12 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Text('Intensidad'),
+                      const Text('Intensidad', style: TextStyle(fontSize: 12)),
                     ],
                   ),
                 ),
                 SizedBox(
-                  width: 200,
+                  width: 180,
                   height: 150,
                   child: ArcoIntensidad(
                     color: colorActual,
@@ -322,7 +322,7 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 1),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

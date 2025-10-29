@@ -88,16 +88,16 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE6ECF5),
+      appBar: Navbar(),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Navbar(),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
             _buildInfoCards(),
-            const SizedBox(height: 70),
+            const SizedBox(height: 40),
             const Expanded(child: HabitacionesCard()),
-            const SizedBox(height: 70),
+            const SizedBox(height: 60),
           ],
         ),
       ),
