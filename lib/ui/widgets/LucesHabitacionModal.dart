@@ -17,9 +17,8 @@ class LucesHabitacionModal extends StatefulWidget {
 }
 
 class _LucesHabitacionModalState extends State<LucesHabitacionModal> {
-  final HabitacionesController habitacionesController =
-      Get.find<HabitacionesController>();
-  final LucesController luzController = Get.find<LucesController>();
+  final HabitacionesController habitacionesController = Get.find();
+  final LucesController luzController = Get.find();
 
   @override
   Widget build(BuildContext context) {

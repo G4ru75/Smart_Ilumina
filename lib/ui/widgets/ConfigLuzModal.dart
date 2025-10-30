@@ -47,8 +47,22 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
           ),
           ElevatedButton(
             onPressed: () async {
-              await lucesController.deshabilitarLuz(luzId);
-              Get.back();
+              try {
+                Navigator.pop(context);
+
+                Get.dialog(
+                  const Center(child: CircularProgressIndicator()),
+                  barrierDismissible: false,
+                );
+
+                await lucesController.deshabilitarLuz(luzId);
+                Get.back();
+                Get.back();
+                Get.snackbar('Éxito', 'La luz ha sido desvinculada');
+              } catch (e) {
+                Get.back();
+                Get.snackbar('Error', 'No se pudo desvincular la luz');
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
