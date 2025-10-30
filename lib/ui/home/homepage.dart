@@ -72,12 +72,12 @@ class _HomePageState extends State<HomePage> {
                 color: Colors.grey[700]!,
               ),
             ),
-            InfoCard(
+            /*InfoCard(
               icono: Icons.flash_on,
               titulo: 'Consumo actual',
               informacion: '12Kw',
               color: Colors.black,
-            ),
+            ),*/
           ],
         );
       }),
@@ -88,16 +88,16 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE6ECF5),
+      appBar: Navbar(),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Navbar(),
-            const SizedBox(height: 15),
+            const SizedBox(height: 30),
             _buildInfoCards(),
-            const SizedBox(height: 10),
-            // El resto del espacio para el card con scroll interno
+            const SizedBox(height: 40),
             const Expanded(child: HabitacionesCard()),
+            const SizedBox(height: 60),
           ],
         ),
       ),

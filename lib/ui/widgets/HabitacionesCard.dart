@@ -86,6 +86,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                             titulo: 'Digite el nombre',
                             controlador: txt,
                             textoSobre: 'Cuarto de los niños',
+                            contrasena: false,
                           ),
                           const SizedBox(height: 24),
                           ElevatedButton(
@@ -138,7 +139,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
             ),
           ],
         ),
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -241,7 +242,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                 );
               }),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -254,7 +255,7 @@ class _HabitacionesCardState extends State<HabitacionesCard> {
                   ),
                 ),
                 onPressed: _mostrarAgregarHabitacionModal,
-                child: const TextosPequenos(texto: 'Agregar habitación'),
+                child: const textoMediano(texto: 'Agregar habitación'),
               ),
             ),
           ],

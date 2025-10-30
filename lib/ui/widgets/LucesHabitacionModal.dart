@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/habitaciones_controller.dart';
 import 'package:smart_ilumina/controllers/luz_controller.dart';
 import 'package:smart_ilumina/models/luces_models.dart';
+import 'package:smart_ilumina/ui/widgets/textos.dart';
 import 'ConfigLuzModal.dart';
 
 class LucesHabitacionModal extends StatefulWidget {
@@ -81,18 +82,16 @@ class _LucesHabitacionModalState extends State<LucesHabitacionModal> {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back),
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          size: 28,
+                          weight: 100,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                       Expanded(
                         child: Center(
-                          child: Text(
-                            habitacion.nombre,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
+                          child: textoMediano(texto: habitacion.nombre),
                         ),
                       ),
                       const SizedBox(width: 48),
@@ -114,12 +113,16 @@ class _LucesHabitacionModalState extends State<LucesHabitacionModal> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Lista de luces (colección externa)
+                  // Lista de luces
                   Flexible(
                     child: Container(
                       constraints: const BoxConstraints(maxHeight: 300),
                       child: luces.isEmpty
-                          ? const Center(child: Text('Sin luces vinculadas'))
+                          ? const Center(
+                              child: textoMediano(
+                                texto: 'Sin luces vinculadas',
+                              ),
+                            )
                           : ListView.builder(
                               shrinkWrap: true,
                               itemCount: luces.length,
@@ -178,7 +181,12 @@ class _LucesHabitacionModalState extends State<LucesHabitacionModal> {
                                         IconButton(
                                           icon: Icon(
                                             Icons.settings,
-                                            color: Colors.grey[600],
+                                            color: const Color.fromARGB(
+                                              255,
+                                              0,
+                                              0,
+                                              0,
+                                            ),
                                           ),
                                           onPressed: () {
                                             showDialog(
@@ -224,15 +232,20 @@ class _LucesHabitacionModalState extends State<LucesHabitacionModal> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Botones: encender/apagar todas (sobre colección luces)
+                  //encender o apagar todas
                   Row(
                     children: [
                       Expanded(
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            foregroundColor: const Color.fromARGB(
+                              255,
+                              255,
+                              255,
+                              255,
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 1),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -240,15 +253,20 @@ class _LucesHabitacionModalState extends State<LucesHabitacionModal> {
                           onPressed: () {
                             luzController.cambiarEstadoTodas(true);
                           },
-                          child: const Text('Encender todas'),
+                          child: const TextosPequenos(texto: 'Encender todas'),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 20),
                       Expanded(
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
+                            foregroundColor: const Color.fromARGB(
+                              255,
+                              255,
+                              255,
+                              255,
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -257,7 +275,7 @@ class _LucesHabitacionModalState extends State<LucesHabitacionModal> {
                           onPressed: () {
                             luzController.cambiarEstadoTodas(false);
                           },
-                          child: const Text('Apagar todas'),
+                          child: const TextosPequenos(texto: 'Apagar todas'),
                         ),
                       ),
                     ],

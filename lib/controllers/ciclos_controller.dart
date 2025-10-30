@@ -30,13 +30,13 @@ class CiclosController extends GetxController {
   /// Configurar o actualizar ciclo para una luz
   Future<void> configurarCiclo({
     required String luzId,
-    required int duracionEncendido, // segundos
-    required int duracionApagado,
+    required double duracionEncendido, // segundos
+    required double duracionApagado,
     bool activo = true,
   }) async {
     try {
       // Validaciones
-      if (duracionEncendido < 1 || duracionApagado < 1) {
+      if (duracionEncendido < 0.1 || duracionApagado < 0.1) {
         Get.snackbar(
           'Error',
           'Las duraciones deben ser mayores a 0 segundos',
@@ -163,8 +163,6 @@ class CiclosController extends GetxController {
 
   /// Eliminar ciclo de una luz
   Future<void> eliminarCiclo(String luzId) async {
-    print('🗑️ Eliminando ciclo de luz: $luzId');
-
     try {
       await _firestore.collection(nombreColeccion).doc(luzId).update({
         'ciclos': null,
@@ -189,7 +187,7 @@ class CiclosController extends GetxController {
     }
   }
 
-  /// Iniciar monitoreo de ciclos activos
+  /// Iniciar monitoreo de ciclos activos y comparar que esten bien tanto en local como en firebase
   void _startCiclosMonitoring() {
     // Escuchar cambios en todas las luces con ciclos activos
     Timer.periodic(const Duration(seconds: 5), (_) async {
@@ -202,6 +200,7 @@ class CiclosController extends GetxController {
         for (final doc in snapshot.docs) {
           final luz = Luces.fromMap(doc.data());
 
+          //Se activa si el ciclo esta activo en firebase y no hay timer activo
           if (luz.ciclos != null && luz.ciclos!.activo) {
             // Si no hay timer activo lo crea
             if (!_cicloTimers.containsKey(luz.id)) {
@@ -226,9 +225,11 @@ class CiclosController extends GetxController {
     _detenerCiclo(luzId);
 
     // Calcular duración total del ciclo
-    final duracionTotal = ciclo.duracionEncendido + ciclo.duracionApagado;
+    final duracionTotal =
+        ((ciclo.duracionEncendido + ciclo.duracionApagado) * 1000).toInt();
+    final duracionEncendido = (ciclo.duracionEncendido * 1000).toInt();
 
-    _cicloTimers[luzId] = Timer.periodic(Duration(seconds: duracionTotal), (
+    _cicloTimers[luzId] = Timer.periodic(Duration(milliseconds: duracionTotal), (
       timer,
     ) async {
       try {
@@ -255,9 +256,13 @@ class CiclosController extends GetxController {
         await lucesController.cambiarEstadoLuz(luzId, true);
 
         // Esperar duración de encendido
-        await Future.delayed(Duration(seconds: ciclo.duracionEncendido));
+        await Future.delayed(Duration(milliseconds: duracionEncendido));
 
         await lucesController.cambiarEstadoLuz(luzId, false);
+        //Solo se maneja el tiempo de la luz de encendido por que el tiempo de apagado
+        //es el tiempo que le toma despues de apagarse repetir el timer
+        //Osea si se envia 5s y 3s de apagado entonces es 8, se enciende sus 5 segundos y restan
+        //3 segundos para que se repita el timer que es jsutamente el tiempo de apagado
 
         _ultimoCambio[luzId] = DateTime.now();
       } catch (e) {
@@ -269,7 +274,7 @@ class CiclosController extends GetxController {
     Future.delayed(Duration.zero, () async {
       try {
         await lucesController.cambiarEstadoLuz(luzId, true);
-        await Future.delayed(Duration(seconds: ciclo.duracionEncendido));
+        await Future.delayed(Duration(milliseconds: duracionEncendido));
         await lucesController.cambiarEstadoLuz(luzId, false);
       } catch (e) {
         print('Error en primera iteración: $e');

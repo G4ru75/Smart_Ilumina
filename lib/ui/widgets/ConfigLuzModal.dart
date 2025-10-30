@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_ilumina/controllers/luz_controller.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:smart_ilumina/ui/widgets/textos.dart';
 import 'ArcoIntensidad.dart';
 
 class ConfigLuzModal extends StatefulWidget {
@@ -25,19 +27,19 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
   @override
   void initState() {
     super.initState();
-    // Garantiza que estemos escuchando la habitación correcta
     if (lucesController.habitacionActualId.value != widget.habitacionId) {
       lucesController.escucharLucesDeHabitacion(widget.habitacionId);
     }
   }
 
-  //Alerta para confirmar el desvincular luz
   void _confirmardesvincularLuz(String luzId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Desvincular luz'),
-        content: const Text('¿Está seguro de desvincular esta luz?'),
+        title: const textoMediano(texto: 'Desvincular luz'),
+        content: const TextosPequenos(
+          texto: '¿Está seguro de desvincular esta luz?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -59,6 +61,57 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
     );
   }
 
+  // Mostrar selector de color completo de pickcolor
+  void _mostrarSelectorColor(String luzId, Color colorActual) {
+    Color colorTemporal = colorActual;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Seleccionar color de la luz'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                //Color Picker con rueda de colores
+                ColorPicker(
+                  pickerColor: colorActual,
+                  onColorChanged: (Color color) {
+                    colorTemporal = color;
+                  },
+                  pickerAreaHeightPercent: 0.8,
+                  enableAlpha: false, // Sin transparencia
+                  displayThumbColor: true,
+                  labelTypes: const [],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                lucesController.cambiarColor(luzId, colorTemporal);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorTemporal,
+                foregroundColor: colorTemporal.computeLuminance() > 0.5
+                    ? Colors.black
+                    : Colors.white,
+              ),
+              child: const Text('Aplicar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -76,15 +129,19 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
         );
       }
 
-      final titulo = 'Configurar: ${luz.nombre}';
+      final titulo = luz.nombre;
       final colorActual = Color(luz.color.value);
 
-      final presets = <Color>[
-        Colors.blue,
-        Colors.yellow,
-        Colors.white,
+      // Colores predefinidos
+      final presetsRapidos = <Color>[
         Colors.red,
+        Colors.orange,
+        Colors.yellow,
         Colors.green,
+        Colors.blue,
+        Colors.purple,
+        Colors.pink,
+        Colors.white,
       ];
 
       return SingleChildScrollView(
@@ -110,21 +167,16 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                     ),
                   ),
                 ),
-
                 IconButton(
-                  onPressed: () {
-                    _confirmardesvincularLuz(luz.id);
-                  },
-                  icon: Icon(Icons.exit_to_app),
+                  onPressed: () => _confirmardesvincularLuz(luz.id),
+                  icon: const Icon(Icons.exit_to_app),
                   color: Colors.red,
                   tooltip: 'Desvincular luz',
                 ),
-                //const SizedBox(width: 48),
               ],
             ),
             const SizedBox(height: 8),
 
-            // Colores + switch
             Row(
               children: [
                 const Icon(
@@ -132,49 +184,113 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                   color: Colors.blue,
                   size: 24,
                 ),
-                const SizedBox(width: 6),
-                ...presets.map(
-                  (c) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                    child: GestureDetector(
-                      onTap: () => lucesController.cambiarColor(luz.id, c),
-                      child: Container(
-                        width: 18,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          color: c,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: colorActual.value == c.value
+                const SizedBox(width: 15),
+
+                // Botón principal para abrir selector completo
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _mostrarSelectorColor(luz.id, colorActual),
+                    child: Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: colorActual,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.grey.shade400,
+                          width: 2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.palette,
+                            color: colorActual.computeLuminance() > 0.5
                                 ? Colors.black
                                 : Colors.white,
-                            width: 2,
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Cambiar color',
+                            style: TextStyle(
+                              color: colorActual.computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-                const Spacer(),
+
+                const SizedBox(width: 12),
+
+                // Switch
                 Switch(
                   value: luz.encendida,
                   activeThumbColor: Colors.white,
                   activeTrackColor: colorActual,
                   onChanged: (v) => lucesController.cambiarEstadoLuz(luz.id, v),
                 ),
-                const SizedBox(width: 8),
               ],
             ),
 
+            const SizedBox(height: 12),
+
+            //Accesos rápidos a los colores predeterminados
+            const Text(
+              'Accesos rápidos:',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
+            ),
             const SizedBox(height: 8),
-            const Text('Luz', style: TextStyle(fontWeight: FontWeight.bold)),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: presetsRapidos.map((color) {
+                final seleccionado = colorActual.value == color.value;
+                return GestureDetector(
+                  onTap: () => lucesController.cambiarColor(luz.id, color),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: seleccionado
+                            ? Colors.black
+                            : Colors.grey.shade300,
+                        width: seleccionado ? 3 : 2,
+                      ),
+                      boxShadow: seleccionado
+                          ? [
+                              BoxShadow(
+                                color: color.withOpacity(0.5),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                              ),
+                            ]
+                          : null,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+
+            const SizedBox(height: 16),
             Text(
               'Nivel de Intensidad',
               style: TextStyle(color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
 
-            // Intensidad con arco (reactivo)
+            // Intensidad con arco
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -189,12 +305,12 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Text('Intensidad'),
+                      const Text('Intensidad', style: TextStyle(fontSize: 12)),
                     ],
                   ),
                 ),
                 SizedBox(
-                  width: 150,
+                  width: 180,
                   height: 150,
                   child: ArcoIntensidad(
                     color: colorActual,
@@ -206,7 +322,7 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 1),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -222,7 +338,7 @@ class _ConfigLuzModalState extends State<ConfigLuzModal> {
                   widget.onSaved?.call();
                   Navigator.of(context).pop();
                 },
-                child: const Text('Guardar'),
+                child: const textoMediano(texto: 'Guardar'),
               ),
             ),
           ],

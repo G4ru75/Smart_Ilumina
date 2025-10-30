@@ -359,7 +359,7 @@ class UsuariosController extends GetxController with WidgetsBindingObserver {
       if (!silentMode) {
         Get.snackbar(
           'Error',
-          '$e Ocurrió un problema al continuar',
+          'ocurrió un problema al continuar',
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
