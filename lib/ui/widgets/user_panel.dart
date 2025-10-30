@@ -103,7 +103,58 @@ class UserPanel extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 4),
+
+              // Indicador de verificación pendiente
+              Builder(
+                builder: (context) {
+                  final currentUser = usuariosController.currentUser;
+                  final firestoreEmail = usuario?.email;
+                  final authEmail = currentUser?.email;
+
+                  // Mostrar indicador si los emails no coinciden
+                  if (firestoreEmail != null &&
+                      authEmail != null &&
+                      firestoreEmail != authEmail) {
+                    return Container(
+                      margin: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: Colors.orange[300]!,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.pending,
+                            size: 14,
+                            color: Colors.orange[700],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Cambio de email pendiente de verificación',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.orange[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+              const SizedBox(height: 8),
 
               if (usuario?.fechaNacimiento != null)
                 Container(
@@ -248,132 +299,212 @@ class UserPanel extends StatelessWidget {
     dynamic usuario,
   ) {
     final nombreController = TextEditingController(text: usuario?.nombre ?? '');
-    final emailController = TextEditingController(text: usuario?.email ?? '');
+    final emailController = TextEditingController(
+      text: usuario?.email ?? controller.currentUser?.email ?? '',
+    );
+    final passwordController = TextEditingController();
+    bool obscurePassword = true;
+    final currentEmail = usuario?.email ?? controller.currentUser?.email ?? '';
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        icon: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.blue[50],
-            shape: BoxShape.circle,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-          child: Icon(Icons.edit_rounded, color: Colors.blue[700], size: 28),
-        ),
-        title: const Text(
-          'Editar Perfil',
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nombreController,
-                decoration: InputDecoration(
-                  labelText: 'Nombre completo',
-                  prefixIcon: const Icon(Icons.person_outline_rounded),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+          icon: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.edit_rounded, color: Colors.blue[700], size: 28),
+          ),
+          title: const Text(
+            'Editar Perfil',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nombreController,
+                  decoration: InputDecoration(
+                    labelText: 'Nombre completo',
+                    prefixIcon: const Icon(Icons.person_outline_rounded),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(
+                        color: Colors.blue[600]!,
+                        width: 2,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: Colors.blue[600]!, width: 2),
+                ),
+                const SizedBox(height: 18),
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'Correo electrónico',
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    helperText:
+                        'Si cambias tu correo, deberás verificarlo antes de que se actualice',
+                    helperMaxLines: 3,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(
+                        color: Colors.blue[600]!,
+                        width: 2,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
                   ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
+                ),
+                const SizedBox(height: 18),
+                TextField(
+                  controller: passwordController,
+                  obscureText: obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña actual',
+                    prefixIcon: const Icon(Icons.lock_outline_rounded),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscurePassword
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_rounded,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscurePassword = !obscurePassword;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    helperText: 'Requerida si cambias el correo electrónico',
+                    helperMaxLines: 2,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(
+                        color: Colors.blue[600]!,
+                        width: 2,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey[700],
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
                 ),
               ),
-              const SizedBox(height: 18),
-              TextField(
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Correo electrónico',
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: Colors.blue[600]!, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                // Validar nombre
+                if (nombreController.text.trim().isEmpty) {
+                  Get.snackbar(
+                    'Error',
+                    'El nombre no puede estar vacío',
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                  return;
+                }
+
+                // Validar email
+                final email = emailController.text.trim();
+                if (email.isEmpty) {
+                  Get.snackbar(
+                    'Error',
+                    'El correo electrónico no puede estar vacío',
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                  return;
+                }
+
+                // Validar formato de email
+                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                if (!emailRegex.hasMatch(email)) {
+                  Get.snackbar(
+                    'Error',
+                    'El formato del correo electrónico no es válido',
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                  return;
+                }
+
+                // Verificar si se cambió el email
+                final emailChanged = email != currentEmail;
+
+                // Si se cambió el email, validar contraseña
+                if (emailChanged && passwordController.text.trim().isEmpty) {
+                  Get.snackbar(
+                    'Error',
+                    'Debes ingresar tu contraseña actual para cambiar el correo',
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                  return;
+                }
+
+                Navigator.pop(context);
+
+                await controller.updateUserData(
+                  nombre: nombreController.text.trim(),
+                  email: emailChanged ? email : null,
+                  currentPassword: emailChanged
+                      ? passwordController.text.trim()
+                      : null,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue[600],
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.grey[700],
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            child: const Text(
-              'Cancelar',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (nombreController.text.trim().isEmpty) {
-                Get.snackbar(
-                  'Error',
-                  'El nombre no puede estar vacío',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-                return;
-              }
-
-              final email = emailController.text.trim();
-              if (email.isEmpty) {
-                Get.snackbar(
-                  'Error',
-                  'El correo electrónico no puede estar vacío',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-                return;
-              }
-
-              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-              if (!emailRegex.hasMatch(email)) {
-                Get.snackbar(
-                  'Error',
-                  'El formato del correo electrónico no es válido',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-                return;
-              }
-
-              Navigator.pop(context);
-              await controller.updateUserData(
-                nombre: nombreController.text.trim(),
-                email: email,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[600],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+              child: const Text(
+                'Guardar',
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
-            child: const Text(
-              'Guardar',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
