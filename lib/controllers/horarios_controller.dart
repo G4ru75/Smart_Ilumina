@@ -73,7 +73,7 @@ class HorariosController extends GetxController {
 
       final now = DateTime.now();
       final horaActual = TimeOfDay.fromDateTime(now);
-      final diaActual = now.weekday; // 1=Lunes, 7=Domingo
+      final diaActual = now.weekday; // 1=Lunes-7=Domingo
 
       final batch = _firestore.batch();
       bool hayCambios = false;
