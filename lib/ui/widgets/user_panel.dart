@@ -77,6 +77,57 @@ class UserPanel extends StatelessWidget {
                 displayEmail,
                 style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               ),
+              const SizedBox(height: 4),
+
+              // Indicador de verificación pendiente
+              Builder(
+                builder: (context) {
+                  final currentUser = usuariosController.currentUser;
+                  final firestoreEmail = usuario?.email;
+                  final authEmail = currentUser?.email;
+
+                  // Mostrar indicador si los emails no coinciden
+                  if (firestoreEmail != null &&
+                      authEmail != null &&
+                      firestoreEmail != authEmail) {
+                    return Container(
+                      margin: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: Colors.orange[300]!,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.pending,
+                            size: 14,
+                            color: Colors.orange[700],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Cambio de email pendiente de verificación',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.orange[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
               const SizedBox(height: 8),
 
               // Fecha de nacimiento
@@ -190,99 +241,153 @@ class UserPanel extends StatelessWidget {
     dynamic usuario,
   ) {
     final nombreController = TextEditingController(text: usuario?.nombre ?? '');
-    final emailController = TextEditingController(text: usuario?.email ?? '');
+    final emailController = TextEditingController(
+      text: usuario?.email ?? controller.currentUser?.email ?? '',
+    );
+    final passwordController = TextEditingController();
+    bool obscurePassword = true;
+    final currentEmail = usuario?.email ?? controller.currentUser?.email ?? '';
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar Perfil'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nombreController,
-                decoration: InputDecoration(
-                  labelText: 'Nombre completo',
-                  prefixIcon: const Icon(Icons.person_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Editar Perfil'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nombreController,
+                  decoration: InputDecoration(
+                    labelText: 'Nombre completo',
+                    prefixIcon: const Icon(Icons.person_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Correo electrónico',
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'Correo electrónico',
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    helperText:
+                        'Si cambias tu correo, deberás verificarlo antes de que se actualice',
+                    helperMaxLines: 3,
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              // Validar nombre
-              if (nombreController.text.trim().isEmpty) {
-                Get.snackbar(
-                  'Error',
-                  'El nombre no puede estar vacío',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-                return;
-              }
-
-              // Validar email
-              final email = emailController.text.trim();
-              if (email.isEmpty) {
-                Get.snackbar(
-                  'Error',
-                  'El correo electrónico no puede estar vacío',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-                return;
-              }
-
-              // Validar formato de email
-              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-              if (!emailRegex.hasMatch(email)) {
-                Get.snackbar(
-                  'Error',
-                  'El formato del correo electrónico no es válido',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-                return;
-              }
-
-              Navigator.pop(context);
-              await controller.updateUserData(
-                nombre: nombreController.text.trim(),
-                email: email,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[600],
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passwordController,
+                  obscureText: obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña actual',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscurePassword = !obscurePassword;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    helperText: 'Requerida si cambias el correo electrónico',
+                    helperMaxLines: 2,
+                  ),
+                ),
+              ],
             ),
-            child: const Text('Guardar'),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                // Validar nombre
+                if (nombreController.text.trim().isEmpty) {
+                  Get.snackbar(
+                    'Error',
+                    'El nombre no puede estar vacío',
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                  return;
+                }
+
+                // Validar email
+                final email = emailController.text.trim();
+                if (email.isEmpty) {
+                  Get.snackbar(
+                    'Error',
+                    'El correo electrónico no puede estar vacío',
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                  return;
+                }
+
+                // Validar formato de email
+                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                if (!emailRegex.hasMatch(email)) {
+                  Get.snackbar(
+                    'Error',
+                    'El formato del correo electrónico no es válido',
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                  return;
+                }
+
+                // Verificar si se cambió el email
+                final emailChanged = email != currentEmail;
+
+                // Si se cambió el email, validar contraseña
+                if (emailChanged && passwordController.text.trim().isEmpty) {
+                  Get.snackbar(
+                    'Error',
+                    'Debes ingresar tu contraseña actual para cambiar el correo',
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                  return;
+                }
+
+                Navigator.pop(context);
+
+                await controller.updateUserData(
+                  nombre: nombreController.text.trim(),
+                  email: emailChanged ? email : null,
+                  currentPassword: emailChanged
+                      ? passwordController.text.trim()
+                      : null,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue[600],
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
       ),
     );
   }
